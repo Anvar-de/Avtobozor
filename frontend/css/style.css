@@ -27,6 +27,8 @@ html, body {
   color: var(--text);
   font-family: var(--font-body);
   -webkit-tap-highlight-color: transparent;
+  max-width: 100%;
+  overflow-x: hidden; /* sahifa hech qachon yon tomonga siljimasin */
 }
 
 body {
@@ -36,6 +38,7 @@ body {
 button, input, select, textarea {
   font-family: inherit;
   color: inherit;
+  min-width: 0; /* grid/flex ichida elementlar torayganda "toshib ketishi"ning oldini oladi */
 }
 
 .app {
@@ -43,6 +46,7 @@ button, input, select, textarea {
   margin: 0 auto;
   padding-bottom: 90px;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ---------- Topbar ---------- */
@@ -85,6 +89,7 @@ button, input, select, textarea {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   padding: 0 16px 14px;
+  min-width: 0;
 }
 .chip-input {
   background: var(--surface);
@@ -281,12 +286,14 @@ button, input, select, textarea {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-bottom: 16px;
+  min-width: 0;
 }
 .spec {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
+  min-width: 0;
 }
 .spec__label {
   font-size: 11px;
@@ -355,7 +362,8 @@ button, input, select, textarea {
   font-size: 14px;
   color: var(--text);
 }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-width: 0; }
+.form-row > label { min-width: 0; }
 .submit-btn {
   background: var(--accent);
   color: var(--accent-ink);
