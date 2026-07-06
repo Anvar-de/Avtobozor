@@ -1,8 +1,10 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from shared.models import ListingStatus
+
+CURRENT_YEAR = datetime.now().year
 
 
 class PhotoOut(BaseModel):
@@ -24,29 +26,36 @@ class UserOut(BaseModel):
 
 
 class ListingCreate(BaseModel):
-    brand: str
-    model: str
-    year: int
-    price: float
-    mileage: int
-    transmission: Optional[str] = None
-    fuel_type: Optional[str] = None
-    region: Optional[str] = None
-    description: Optional[str] = None
-    contact_phone: Optional[str] = None
+    brand: str = Field(..., min_length=1, max_length=50)
+    model: str = Field(..., min_length=1, max_length=50)
+    year: int = Field(..., ge=1970, le=CURRENT_YEAR + 1, description="1970 dan hozirgi yilgacha")
+    price: float = Field(..., gt=0, le=100_000_000_000, description="0 dan katta bo'lishi kerak")
+    mileage: int = Field(..., ge=0, le=2_000_000, description="km, manfiy bo'lmasligi kerak")
+    transmission: Optional[str] = Field(None, max_length=30)
+    fuel_type: Optional[str] = Field(None, max_length=30)
+    region: Optional[str] = Field(None, max_length=50)
+    description: Optional[str] = Field(None, max_length=2000)
+    contact_phone: Optional[str] = Field(None, max_length=20)
+
+    @field_validator("brand", "model")
+    @classmethod
+    def not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Bo'sh bo'lishi mumkin emas")
+        return v.strip()
 
 
 class ListingUpdate(BaseModel):
-    brand: Optional[str] = None
-    model: Optional[str] = None
-    year: Optional[int] = None
-    price: Optional[float] = None
-    mileage: Optional[int] = None
-    transmission: Optional[str] = None
-    fuel_type: Optional[str] = None
-    region: Optional[str] = None
-    description: Optional[str] = None
-    contact_phone: Optional[str] = None
+    brand: Optional[str] = Field(None, min_length=1, max_length=50)
+    model: Optional[str] = Field(None, min_length=1, max_length=50)
+    year: Optional[int] = Field(None, ge=1970, le=CURRENT_YEAR + 1)
+    price: Optional[float] = Field(None, gt=0, le=100_000_000_000)
+    mileage: Optional[int] = Field(None, ge=0, le=2_000_000)
+    transmission: Optional[str] = Field(None, max_length=30)
+    fuel_type: Optional[str] = Field(None, max_length=30)
+    region: Optional[str] = Field(None, max_length=50)
+    description: Optional[str] = Field(None, max_length=2000)
+    contact_phone: Optional[str] = Field(None, max_length=20)
     status: Optional[ListingStatus] = None
 
 

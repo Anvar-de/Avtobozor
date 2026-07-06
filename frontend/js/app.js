@@ -29,7 +29,16 @@ async function api(path, { method = "GET", body, isForm = false } = {}) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: "Xatolik yuz berdi" }));
-    throw new Error(err.detail || "Xatolik yuz berdi");
+    let message = "Xatolik yuz berdi";
+    if (typeof err.detail === "string") {
+      message = err.detail;
+    } else if (Array.isArray(err.detail)) {
+      // FastAPI validatsiya xatolari ro'yxat ko'rinishida keladi
+      message = err.detail
+        .map((d) => (typeof d === "string" ? d : d.msg || "Noto'g'ri qiymat"))
+        .join("; ");
+    }
+    throw new Error(message);
   }
   return res.status === 204 ? null : res.json();
 }
