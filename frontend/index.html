@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Avto E'lonlar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Yuqori panel -->
+  <header class="topbar">
+    <div class="topbar__title">AVTO<span>BOZOR</span></div>
+    <button class="icon-btn" id="btnMyListings" aria-label="Mening e'lonlarim">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20V10L12 4L20 10V20H14V14H10V20H4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <!-- ============ FEED VIEW ============ -->
+  <main class="view" id="view-feed">
+
+    <div class="filters" id="filters">
+      <input class="chip-input" id="fBrand" type="text" placeholder="Marka" />
+      <input class="chip-input" id="fRegion" type="text" placeholder="Hudud" />
+      <input class="chip-input chip-input--num" id="fMinYear" type="number" placeholder="Yildan" />
+      <input class="chip-input chip-input--num" id="fMaxPrice" type="number" placeholder="Narxi, gacha" />
+      <button class="chip-btn" id="btnFilter">Qidirish</button>
+    </div>
+
+    <div class="listing-grid" id="listingGrid">
+      <!-- JS orqali to'ldiriladi -->
+    </div>
+
+    <div class="empty-state" id="feedEmpty" hidden>
+      <div class="empty-state__gauge">0</div>
+      <p>Hozircha e'lon yo'q.<br/>Birinchi bo'lib joylang!</p>
+    </div>
+  </main>
+
+  <!-- ============ DETAIL VIEW ============ -->
+  <main class="view" id="view-detail" hidden>
+    <button class="back-btn" data-back="feed">← Ro'yxatga</button>
+    <div id="detailContent"></div>
+  </main>
+
+  <!-- ============ MY LISTINGS VIEW ============ -->
+  <main class="view" id="view-my" hidden>
+    <button class="back-btn" data-back="feed">← Ro'yxatga</button>
+    <h2 class="section-title">Mening e'lonlarim</h2>
+    <div class="listing-grid" id="myListingGrid"></div>
+    <div class="empty-state" id="myEmpty" hidden>
+      <p>Siz hali e'lon joylamagansiz.</p>
+    </div>
+  </main>
+
+  <!-- ============ CREATE VIEW ============ -->
+  <main class="view" id="view-create" hidden>
+    <button class="back-btn" data-back="feed">← Ro'yxatga</button>
+    <h2 class="section-title">Yangi e'lon</h2>
+    <form id="createForm" class="form">
+      <label>Marka *<input required name="brand" type="text" placeholder="Chevrolet" /></label>
+      <label>Model *<input required name="model" type="text" placeholder="Cobalt" /></label>
+      <div class="form-row">
+        <label>Yili *<input required name="year" type="number" placeholder="2021" /></label>
+        <label>Probeg, km *<input required name="mileage" type="number" placeholder="45000" /></label>
+      </div>
+      <label>Narxi, so'm *<input required name="price" type="number" placeholder="180000000" /></label>
+      <div class="form-row">
+        <label>Uzatma
+          <select name="transmission">
+            <option value="">Tanlang</option>
+            <option>Avtomat</option>
+            <option>Mexanika</option>
+            <option>Variator</option>
+          </select>
+        </label>
+        <label>Yoqilg'i
+          <select name="fuel_type">
+            <option value="">Tanlang</option>
+            <option>Benzin</option>
+            <option>Gaz</option>
+            <option>Benzin/Gaz</option>
+            <option>Dizel</option>
+            <option>Gibrid</option>
+            <option>Elektr</option>
+          </select>
+        </label>
+      </div>
+      <label>Hudud<input name="region" type="text" placeholder="Samarqand" /></label>
+      <label>Tavsif<textarea name="description" rows="4" placeholder="Avtomobil holati haqida qo'shimcha ma'lumot"></textarea></label>
+      <label>Aloqa uchun telefon<input name="contact_phone" type="tel" placeholder="+998 90 123 45 67" /></label>
+      <label>Rasmlar<input id="photoInput" type="file" accept="image/*" multiple /></label>
+      <button type="submit" class="submit-btn">E'lonni joylash</button>
+      <p class="form-hint">E'lon joylashdan oldin admin tomonidan ko'rib chiqiladi.</p>
+    </form>
+  </main>
+
+  <!-- Pastki tugma -->
+  <button class="fab" id="btnCreate" aria-label="Yangi e'lon">+</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

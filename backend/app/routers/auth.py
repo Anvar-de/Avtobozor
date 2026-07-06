@@ -1,0 +1,32 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from shared.database import get_db
+from shared.models import User
+from ..telegram_auth import get_telegram_user
+from ..schemas import UserOut
+
+router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+def get_or_create_user(db: Session, tg_user: dict) -> User:
+    user = db.query(User).filter(User.telegram_id == tg_user["id"]).first()
+    if user:
+        return user
+
+    full_name = " ".join(filter(None, [tg_user.get("first_name"), tg_user.get("last_name")]))
+    user = User(
+        telegram_id=tg_user["id"],
+        username=tg_user.get("username"),
+        full_name=full_name or None,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/me", response_model=UserOut)
+def get_me(db: Session = Depends(get_db), tg_user: dict = Depends(get_telegram_user)):
+    """Mini App ochilganda chaqiriladi: foydalanuvchini topadi yoki yaratadi."""
+    return get_or_create_user(db, tg_user)
