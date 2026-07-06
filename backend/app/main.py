@@ -9,7 +9,7 @@ from aiogram.types import Update
 
 from shared.database import Base, engine
 from .routers import auth, listings
-from .telegram_bot import bot, dp, setup_menu_button
+from .telegram_bot import bot, dp, setup_menu_button, resolve_bot_username
 
 # Jadvallarni yaratish (production'da Alembic migratsiya ishlatish tavsiya etiladi)
 Base.metadata.create_all(bind=engine)
@@ -63,6 +63,8 @@ async def telegram_webhook(request: Request):
 async def set_telegram_webhook():
     if bot is None:
         return
+    await resolve_bot_username()  # kanal xabaridagi tugma uchun bot @username'ini oladi
+
     # Render bunday muhit o'zgaruvchisini avtomatik beradi (masalan
     # "https://sizning-servis.onrender.com"). Boshqa hostingda buni qo'lda
     # PUBLIC_URL sifatida sozlang.

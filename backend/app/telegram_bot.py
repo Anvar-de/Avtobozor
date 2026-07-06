@@ -3,7 +3,9 @@ Bot dispatcher va handlerlar — bu modul HAM webhook rejimida (backend ichida,
 production/Render'da), HAM polling rejimida (bot/bot.py orqali, lokal test uchun)
 ishlatiladi. Shu sababli Bot/Dispatcher shu yerda bir marta e'lon qilinadi.
 """
+import logging
 import os
+from urllib.parse import urljoin
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
@@ -16,12 +18,28 @@ from aiogram.types import (
 from shared.database import SessionLocal
 from shared.models import Listing, ListingStatus, User
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+logger = logging.getLogger("telegram_bot")
+
+BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 MINI_APP_URL = os.getenv("MINI_APP_URL", "https://example.com")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "")
+# Tasdiqlangan e'lonlar avtomatik joylanadigan kanal: @kanal_username yoki -100... ko'rinishidagi ID
+CHANNEL_ID = os.getenv("CHANNEL_ID", "").strip()
 
 bot = Bot(token=BOT_TOKEN) if BOT_TOKEN else None
 dp = Dispatcher()
+
+BOT_USERNAME: str | None = None  # startup vaqtida to'ldiriladi
+
+
+async def resolve_bot_username():
+    """Botning @username'ini bir marta olib, keshda saqlaydi (kanal xabaridagi
+    tugma uchun kerak — bot manzilini qo'lda kiritish shart bo'lmasin)."""
+    global BOT_USERNAME
+    if bot is None:
+        return
+    me = await bot.get_me()
+    BOT_USERNAME = me.username
 
 
 async def setup_menu_button():
@@ -36,6 +54,63 @@ async def setup_menu_button():
             web_app=WebAppInfo(url=MINI_APP_URL),
         )
     )
+
+
+async def post_to_channel(listing: Listing):
+    """Tasdiqlangan e'lonni kanalga joylaydi (agar CHANNEL_ID sozlangan bo'lsa)."""
+    if bot is None or not CHANNEL_ID:
+        return
+
+    caption_lines = [
+        f"🚗 <b>{listing.brand} {listing.model}</b>, {listing.year}",
+        "",
+        f"💰 <b>{listing.price:,.0f}</b> so'm".replace(",", " "),
+        f"🛣 {listing.mileage:,} km".replace(",", " "),
+    ]
+    if listing.transmission:
+        caption_lines.append(f"⚙️ {listing.transmission}")
+    if listing.fuel_type:
+        caption_lines.append(f"⛽ {listing.fuel_type}")
+    if listing.region:
+        caption_lines.append(f"📍 {listing.region}")
+    if listing.description:
+        desc = listing.description.strip()
+        caption_lines.append("")
+        caption_lines.append(desc[:300] + ("…" if len(desc) > 300 else ""))
+    if listing.contact_phone:
+        caption_lines.append("")
+        caption_lines.append(f"📞 {listing.contact_phone}")
+    caption = "\n".join(caption_lines)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="🚗 Barcha e'lonlarni ko'rish",
+            url=f"https://t.me/{BOT_USERNAME}" if BOT_USERNAME else MINI_APP_URL,
+        )
+    ]])
+
+    try:
+        if listing.photos:
+            photo_url = urljoin(MINI_APP_URL + "/", listing.photos[0].file_path.lstrip("/"))
+            await bot.send_photo(
+                chat_id=CHANNEL_ID,
+                photo=photo_url,
+                caption=caption,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+        else:
+            await bot.send_message(
+                chat_id=CHANNEL_ID,
+                text=caption,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+    except Exception:
+        # Kanalga joylash ishlamay qolsa ham (masalan bot hali admin qilinmagan
+        # bo'lsa), asosiy oqim (tasdiqlash) buzilmasligi kerak — shuning uchun
+        # xatoni yutib, faqat logga yozamiz.
+        logger.exception("Kanalga joylashda xatolik (CHANNEL_ID=%s)", CHANNEL_ID)
 
 
 @dp.message(CommandStart())
@@ -129,5 +204,8 @@ async def moderation_handler(callback: CallbackQuery):
                 await bot.send_message(owner.telegram_id, text)
             except Exception:
                 pass
+
+        if action == "approve":
+            await post_to_channel(listing)
     finally:
         db.close()

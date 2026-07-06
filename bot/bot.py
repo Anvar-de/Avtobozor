@@ -17,12 +17,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from dotenv import load_dotenv
 load_dotenv()
 
-from backend.app.telegram_bot import bot, dp, BOT_TOKEN, setup_menu_button
+from backend.app.telegram_bot import bot, dp, BOT_TOKEN, setup_menu_button, resolve_bot_username
 
 
 async def main():
     if not BOT_TOKEN:
         raise RuntimeError("BOT_TOKEN muhit o'zgaruvchisi sozlanmagan (.env faylni tekshiring)")
+    await resolve_bot_username()
     await setup_menu_button()
     print("Bot polling rejimida ishga tushdi. To'xtatish uchun Ctrl+C.")
     await dp.start_polling(bot)
