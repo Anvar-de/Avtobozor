@@ -9,7 +9,7 @@ from aiogram.types import Update
 
 from shared.database import Base, engine
 from .routers import auth, listings
-from .telegram_bot import bot, dp
+from .telegram_bot import bot, dp, setup_menu_button
 
 # Jadvallarni yaratish (production'da Alembic migratsiya ishlatish tavsiya etiladi)
 Base.metadata.create_all(bind=engine)
@@ -70,6 +70,7 @@ async def set_telegram_webhook():
     if not public_url:
         return  # lokal test paytida webhook o'rnatilmaydi — bot/bot.py orqali polling ishlating
     await bot.set_webhook(f"{public_url}{WEBHOOK_PATH}")
+    await setup_menu_button()
 
 
 # ============================================================

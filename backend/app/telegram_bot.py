@@ -10,6 +10,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import (
     Message, CallbackQuery, WebAppInfo,
     InlineKeyboardMarkup, InlineKeyboardButton,
+    MenuButtonWebApp,
 )
 
 from shared.database import SessionLocal
@@ -21,6 +22,20 @@ ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "")
 
 bot = Bot(token=BOT_TOKEN) if BOT_TOKEN else None
 dp = Dispatcher()
+
+
+async def setup_menu_button():
+    """Chatning pastki qismida (matn yozish maydoni yonida) doimiy 'Menu'
+    tugmasini o'rnatadi — bu tugma har doim ko'rinib turadi, foydalanuvchi
+    /start yozishi shart emas."""
+    if bot is None:
+        return
+    await bot.set_chat_menu_button(
+        menu_button=MenuButtonWebApp(
+            text="🚗 E'lonlar",
+            web_app=WebAppInfo(url=MINI_APP_URL),
+        )
+    )
 
 
 @dp.message(CommandStart())
