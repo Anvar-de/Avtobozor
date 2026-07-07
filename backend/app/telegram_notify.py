@@ -17,7 +17,8 @@ async def notify_admin_new_listing(listing) -> None:
         f"{listing.brand} {listing.model}, {listing.year}\n"
         f"Narxi: {listing.price:,.0f} so'm\n"
         f"Probeg: {listing.mileage:,} km\n"
-        f"Hudud: {listing.region or '-'}"
+        f"Hudud: {listing.region or '-'}\n"
+        f"Foydalanuvchi ID: {listing.owner.telegram_id}"
     )
     if listing.description:
         text += f"\nTavsif: {listing.description.strip()}"
