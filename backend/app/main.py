@@ -1,6 +1,10 @@
+import logging
 import os
+import secrets
 from dotenv import load_dotenv
 load_dotenv()
+
+logger = logging.getLogger("main")
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,7 +49,16 @@ def health():
 #
 # WEBHOOK_SECRET — tasodifiy maxfiy so'z, faqat siz va Telegram bilishi kerak,
 # shunda begona odam shu manzilga soxta so'rov yubora olmaydi.
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "changeme")
+# DIQQAT: standart qiymat qo'yilmaydi — .env'da sozlanmagan bo'lsa, har safar server
+# ishga tushganda tasodifiy so'z generatsiya qilinadi (oldindan taxmin qilib bo'lmaydigan
+# "changeme" kabi ma'lum qiymatning production'da qolib ketishining oldini olish uchun).
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+if not WEBHOOK_SECRET:
+    WEBHOOK_SECRET = secrets.token_urlsafe(32)
+    logger.warning(
+        "WEBHOOK_SECRET .env'da sozlanmagan — tasodifiy qiymat generatsiya qilindi. "
+        "Production'da barqaror ishlashi uchun .env faylida WEBHOOK_SECRET'ni o'zingiz belgilang."
+    )
 WEBHOOK_PATH = f"/telegram/webhook/{WEBHOOK_SECRET}"
 
 

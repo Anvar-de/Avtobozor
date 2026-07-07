@@ -1,8 +1,10 @@
+import io
 import os
 import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from PIL import Image
 from sqlalchemy.orm import Session, joinedload
 
 from shared.database import get_db
@@ -16,7 +18,9 @@ router = APIRouter(prefix="/api/listings", tags=["listings"])
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+# Kengaytma shu xaritadan olinadi (foydalanuvchi yuborgan fayl nomidan emas) —
+# aks holda hujumchi ".jpg" rasm sifatida ".svg"/".html" fayl yuklab, XSS qilishi mumkin edi.
+ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 
 
 @router.get("", response_model=list[ListingOut])
@@ -68,7 +72,12 @@ def my_listings(
 
 
 @router.get("/{listing_id}", response_model=ListingOut)
-def get_listing(listing_id: int, db: Session = Depends(get_db)):
+def get_listing(
+    listing_id: int,
+    db: Session = Depends(get_db),
+    tg_user: dict = Depends(get_telegram_user),
+):
+    """Tasdiqlangan e'lonni istalgan kishi, tasdiqlanmagan/rad etilganini esa faqat egasi ko'ra oladi."""
     listing = (
         db.query(Listing)
         .options(joinedload(Listing.photos))
@@ -77,6 +86,12 @@ def get_listing(listing_id: int, db: Session = Depends(get_db)):
     )
     if not listing:
         raise HTTPException(status_code=404, detail="E'lon topilmadi")
+
+    if listing.status != ListingStatus.approved:
+        user = get_or_create_user(db, tg_user)
+        if listing.user_id != user.id:
+            raise HTTPException(status_code=404, detail="E'lon topilmadi")
+
     return listing
 
 
@@ -114,12 +129,18 @@ async def upload_photo(
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status_code=400, detail="Faqat JPEG, PNG yoki WEBP rasm qabul qilinadi")
 
-    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    contents = await file.read()
+    try:
+        Image.open(io.BytesIO(contents)).verify()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Fayl haqiqiy rasm emas")
+
+    ext = ALLOWED_IMAGE_TYPES[file.content_type]
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(UPLOAD_DIR, filename)
 
     with open(filepath, "wb") as f:
-        f.write(await file.read())
+        f.write(contents)
 
     position = len(listing.photos)
     photo = Photo(listing_id=listing.id, file_path=f"/uploads/{filename}", position=position)
