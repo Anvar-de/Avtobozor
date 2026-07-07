@@ -19,6 +19,8 @@ async def notify_admin_new_listing(listing) -> None:
         f"Probeg: {listing.mileage:,} km\n"
         f"Hudud: {listing.region or '-'}"
     )
+    if listing.description:
+        text += f"\nTavsif: {listing.description.strip()}"
     keyboard = {
         "inline_keyboard": [[
             {"text": "✅ Tasdiqlash", "callback_data": f"approve:{listing.id}"},
