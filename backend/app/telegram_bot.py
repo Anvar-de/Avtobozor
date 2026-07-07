@@ -12,7 +12,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import (
     Message, CallbackQuery, WebAppInfo,
     InlineKeyboardMarkup, InlineKeyboardButton,
-    MenuButtonWebApp,
+    MenuButtonWebApp, InputMediaPhoto,
 )
 
 from shared.database import SessionLocal
@@ -90,13 +90,29 @@ async def post_to_channel(listing: Listing):
     ]])
 
     try:
-        if listing.photos:
-            photo_url = urljoin(MINI_APP_URL + "/", listing.photos[0].file_path.lstrip("/"))
+        photo_urls = [
+            urljoin(MINI_APP_URL + "/", p.file_path.lstrip("/")) for p in listing.photos
+        ]
+
+        if len(photo_urls) == 1:
             await bot.send_photo(
                 chat_id=CHANNEL_ID,
-                photo=photo_url,
+                photo=photo_urls[0],
                 caption=caption,
                 parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+        elif len(photo_urls) > 1:
+            # Telegram sendMediaGroup tugma (reply_markup) qo'shishga ruxsat bermaydi,
+            # shuning uchun avval albom (barcha rasmlar), keyin tugmali kichik xabar yuboramiz.
+            media = [
+                InputMediaPhoto(media=url, caption=caption if i == 0 else None, parse_mode="HTML")
+                for i, url in enumerate(photo_urls[:10])  # Telegram albomda maksimal 10 ta rasm
+            ]
+            await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
+            await bot.send_message(
+                chat_id=CHANNEL_ID,
+                text="👆 E'lon rasmlari yuqorida",
                 reply_markup=keyboard,
             )
         else:
