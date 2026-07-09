@@ -3,16 +3,20 @@ Bot dispatcher va handlerlar — bu modul HAM webhook rejimida (backend ichida,
 production/Render'da), HAM polling rejimida (bot/bot.py orqali, lokal test uchun)
 ishlatiladi. Shu sababli Bot/Dispatcher shu yerda bir marta e'lon qilinadi.
 """
+import asyncio
+import io
 import logging
 import os
 from urllib.parse import urljoin
 
+import httpx
+from PIL import Image
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import (
     Message, CallbackQuery, WebAppInfo,
     InlineKeyboardMarkup, InlineKeyboardButton,
-    MenuButtonWebApp, InputMediaPhoto,
+    MenuButtonWebApp, InputMediaPhoto, BufferedInputFile,
 )
 
 from shared.database import SessionLocal
@@ -28,6 +32,13 @@ CHANNEL_ID = os.getenv("CHANNEL_ID", "").strip()
 # BotFather'da /newapp orqali yaratilgan Mini App short name (masalan "Autosavdo") —
 # kanal tugmasidan bitta bosishda to'g'ridan-to'g'ri Mini App ochilishi uchun kerak.
 MINI_APP_SHORT_NAME = os.getenv("MINI_APP_SHORT_NAME", "Autosavdo").strip()
+
+# Kanal posti uchun bir nechta e'lon rasmidan yasaladigan kollaj sozlamalari.
+# Cheklovlar xotira/CPU'ni yeb ketadigan yoki osilib qoladigan holatlarning oldini olish uchun.
+COLLAGE_MAX_PHOTOS = 9  # kollajga kiritiladigan rasmlar soni (3x3 grid)
+COLLAGE_CELL_SIZE = 500  # har bir katakcha o'lchami (piksel)
+COLLAGE_FETCH_TIMEOUT = 10.0  # har bir rasmni yuklab olish uchun maksimal soniya
+COLLAGE_MAX_PHOTO_BYTES = 15 * 1024 * 1024  # bitta rasm uchun xavfsizlik chegarasi
 
 bot = Bot(token=BOT_TOKEN) if BOT_TOKEN else None
 dp = Dispatcher()
@@ -57,6 +68,69 @@ async def setup_menu_button():
             web_app=WebAppInfo(url=MINI_APP_URL),
         )
     )
+
+
+def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
+    """Yuklab olingan rasm baytlaridan bitta grid-kollaj yasaydi. Pillow'ning
+    dekodlash/qayta o'lchash ishi CPU-bog'liq bo'lgani uchun bu funksiya
+    asyncio.to_thread orqali alohida oqimda chaqiriladi — shunda noto'g'ri yoki
+    og'ir rasm bot event loop'ini to'xtatib qo'ymaydi."""
+    images: list[Image.Image] = []
+    for data in images_bytes:
+        try:
+            img = Image.open(io.BytesIO(data))
+            img.load()  # to'liq dekodlaydi — buzuq fayl bo'lsa shu yerda xato chiqadi
+            # Pillow'ning standart Image.MAX_IMAGE_PIXELS chegarasi shu yerda ham
+            # ishlaydi va haddan tashqari katta ("decompression bomb") rasmlarni
+            # DecompressionBombError bilan rad etadi — atayin o'chirilmagan.
+            images.append(img.convert("RGB"))
+        except Exception:
+            logger.warning("Kollaj uchun bitta rasmni dekodlab bo'lmadi, o'tkazib yuborildi")
+
+    if not images:
+        return None
+
+    cols = 2 if len(images) > 1 else 1
+    rows = (len(images) + cols - 1) // cols
+    canvas = Image.new("RGB", (COLLAGE_CELL_SIZE * cols, COLLAGE_CELL_SIZE * rows), "white")
+
+    for i, img in enumerate(images):
+        img.thumbnail((COLLAGE_CELL_SIZE, COLLAGE_CELL_SIZE))
+        x = (i % cols) * COLLAGE_CELL_SIZE + (COLLAGE_CELL_SIZE - img.width) // 2
+        y = (i // cols) * COLLAGE_CELL_SIZE + (COLLAGE_CELL_SIZE - img.height) // 2
+        canvas.paste(img, (x, y))
+
+    # JPEG'ga qayta kodlash asl fayldagi metadata/EXIF va boshqa "payload"larni
+    # ham tashlab yuboradi — kanalga faqat piksellar boradi, xom fayl emas.
+    buf = io.BytesIO()
+    canvas.save(buf, format="JPEG", quality=85)
+    return buf.getvalue()
+
+
+async def _build_collage(photo_urls: list[str]) -> bytes | None:
+    """Bizning o'zimiz saqlagan (avval yuklashda tekshirilgan) e'lon rasmlaridan
+    kollaj yasaydi. Har qanday xatolikda None qaytaradi — chaqiruvchi tomon
+    eski albom usuliga qaytishi kerak, shuning uchun bu yerda hech narsa
+    ko'tarilmaydi (raise qilinmaydi)."""
+    urls = photo_urls[:COLLAGE_MAX_PHOTOS]
+    images_bytes: list[bytes] = []
+    try:
+        async with httpx.AsyncClient(timeout=COLLAGE_FETCH_TIMEOUT) as client:
+            for url in urls:
+                resp = await client.get(url)
+                resp.raise_for_status()
+                if len(resp.content) > COLLAGE_MAX_PHOTO_BYTES:
+                    logger.warning("Kollaj uchun rasm hajmi chegaradan katta, o'tkazib yuborildi: %s", url)
+                    continue
+                images_bytes.append(resp.content)
+    except Exception:
+        logger.exception("Kollaj uchun rasmlarni yuklab olishda xatolik")
+        return None
+
+    if not images_bytes:
+        return None
+
+    return await asyncio.to_thread(_assemble_collage, images_bytes)
 
 
 async def post_to_channel(listing: Listing):
@@ -109,18 +183,32 @@ async def post_to_channel(listing: Listing):
                 reply_markup=keyboard,
             )
         elif len(photo_urls) > 1:
-            # Telegram sendMediaGroup tugma (reply_markup) qo'shishga ruxsat bermaydi,
-            # shuning uchun avval albom (barcha rasmlar), keyin tugmali kichik xabar yuboramiz.
-            media = [
-                InputMediaPhoto(media=url, caption=caption if i == 0 else None, parse_mode="HTML")
-                for i, url in enumerate(photo_urls[:10])  # Telegram albomda maksimal 10 ta rasm
-            ]
-            await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
-            await bot.send_message(
-                chat_id=CHANNEL_ID,
-                text="Avtosavdocom",
-                reply_markup=keyboard,
-            )
+            # Bir nechta rasmni bitta kollajga birlashtiramiz — shunda caption
+            # va tugma bitta xabarda ("yopishgan" holda) yuboriladi. Telegram
+            # sendMediaGroup'ga tugma qo'shishga ruxsat bermaydi, shu sababli
+            # bu usul o'sha cheklovni butunlay chetlab o'tadi.
+            collage_bytes = await _build_collage(photo_urls)
+            if collage_bytes is not None:
+                await bot.send_photo(
+                    chat_id=CHANNEL_ID,
+                    photo=BufferedInputFile(collage_bytes, filename="collage.jpg"),
+                    caption=caption,
+                    parse_mode="HTML",
+                    reply_markup=keyboard,
+                )
+            else:
+                # Kollaj yasab bo'lmadi (masalan rasmlarni yuklab olishda
+                # xatolik) — eski albom + alohida tugmali xabar usuliga qaytamiz.
+                media = [
+                    InputMediaPhoto(media=url, caption=caption if i == 0 else None, parse_mode="HTML")
+                    for i, url in enumerate(photo_urls[:10])  # Telegram albomda maksimal 10 ta rasm
+                ]
+                await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
+                await bot.send_message(
+                    chat_id=CHANNEL_ID,
+                    text="Avtosavdocom",
+                    reply_markup=keyboard,
+                )
         else:
             await bot.send_message(
                 chat_id=CHANNEL_ID,
