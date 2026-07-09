@@ -21,6 +21,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # Kengaytma shu xaritadan olinadi (foydalanuvchi yuborgan fayl nomidan emas) —
 # aks holda hujumchi ".jpg" rasm sifatida ".svg"/".html" fayl yuklab, XSS qilishi mumkin edi.
 ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+MAX_PHOTOS_PER_LISTING = 8
 
 
 @router.get("", response_model=list[ListingOut])
@@ -126,6 +127,8 @@ async def upload_photo(
         raise HTTPException(status_code=404, detail="E'lon topilmadi")
     if listing.user_id != user.id:
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
+    if len(listing.photos) >= MAX_PHOTOS_PER_LISTING:
+        raise HTTPException(status_code=400, detail=f"Ko'pi bilan {MAX_PHOTOS_PER_LISTING} ta rasm yuklash mumkin")
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status_code=400, detail="Faqat JPEG, PNG yoki WEBP rasm qabul qilinadi")
 

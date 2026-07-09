@@ -6,6 +6,7 @@
 // Pages'da) sinasangiz, index.html'ga app.js'dan OLDIN shunday qator qo'shing:
 //   <script>window.API_BASE_URL = "https://sizning-backend.onrender.com";</script>
 const API_BASE = window.API_BASE_URL || "";
+const MAX_PHOTOS = 8; // backend/app/routers/listings.py'dagi MAX_PHOTOS_PER_LISTING bilan mos
 
 // ============================================================
 // Telegram WebApp
@@ -250,6 +251,12 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
   const form = e.target;
   const fd = new FormData(form);
 
+  const photoInput = document.getElementById("photoInput");
+  if (photoInput.files.length > MAX_PHOTOS) {
+    showToast(`Ko'pi bilan ${MAX_PHOTOS} ta rasm yuklash mumkin`);
+    return;
+  }
+
   const payload = {
     brand: fd.get("brand"),
     model: fd.get("model"),
@@ -266,7 +273,6 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
   try {
     const listing = await api("/api/listings", { method: "POST", body: payload });
 
-    const photoInput = document.getElementById("photoInput");
     for (const file of photoInput.files) {
       const photoForm = new FormData();
       photoForm.append("file", file);
