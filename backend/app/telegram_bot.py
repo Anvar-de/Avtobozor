@@ -116,9 +116,11 @@ async def post_to_channel(listing: Listing):
                 for i, url in enumerate(photo_urls[:10])  # Telegram albomda maksimal 10 ta rasm
             ]
             await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
+            # Telegram bo'sh matnli xabar yuborishga ruxsat bermaydi, shuning uchun
+            # ko'rinmas belgi ishlatamiz — foydalanuvchiga faqat tugma ko'rinadi.
             await bot.send_message(
                 chat_id=CHANNEL_ID,
-                text="👆 E'lon rasmlari yuqorida",
+                text="⁣",
                 reply_markup=keyboard,
             )
         else:
