@@ -10,7 +10,7 @@ import os
 from urllib.parse import urljoin
 
 import httpx
-from PIL import Image
+from PIL import Image, ImageOps
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import (
@@ -90,15 +90,36 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
     if not images:
         return None
 
-    cols = 2 if len(images) > 1 else 1
-    rows = (len(images) + cols - 1) // cols
-    canvas = Image.new("RGB", (COLLAGE_CELL_SIZE * cols, COLLAGE_CELL_SIZE * rows), "white")
+    n = len(images)
+    # WhatsApp/Instagram uslubidagi "chiroyli" ustun soni: 1→1, 2→2, 3→3,
+    # 4→2x2 (kvadrat), 5 dan ko'p bo'lsa 3 ustun (masalan 5 ta = 3+2, 7 ta = 3+3+1).
+    if n == 4:
+        cols = 2
+    else:
+        cols = min(n, 3)
+    rows = (n + cols - 1) // cols
 
+    gap = 6  # katakchalar orasidagi bo'shliq (piksel)
+    cell = COLLAGE_CELL_SIZE
+    canvas = Image.new(
+        "RGB",
+        (cell * cols + gap * (cols + 1), cell * rows + gap * (rows + 1)),
+        "white",
+    )
+
+    last_row_count = n - cols * (rows - 1)  # oxirgi qatordagi rasmlar soni
     for i, img in enumerate(images):
-        img.thumbnail((COLLAGE_CELL_SIZE, COLLAGE_CELL_SIZE))
-        x = (i % cols) * COLLAGE_CELL_SIZE + (COLLAGE_CELL_SIZE - img.width) // 2
-        y = (i // cols) * COLLAGE_CELL_SIZE + (COLLAGE_CELL_SIZE - img.height) // 2
-        canvas.paste(img, (x, y))
+        row, col = divmod(i, cols)
+        row_items = last_row_count if row == rows - 1 else cols
+        # Oxirgi qator to'liq emas bo'lsa (masalan 3 ustunga 2 ta rasm qolsa),
+        # bo'sh joy chetda emas, qator markazida bo'linadi — tekis ko'rinadi.
+        row_offset = ((cols - row_items) * (cell + gap)) // 2
+        # thumbnail+pad o'rniga "cover" crop qilamiz — katakcha to'liq to'ladi,
+        # atrofida oq chiziqlar qolmaydi.
+        thumb = ImageOps.fit(img, (cell, cell), method=Image.LANCZOS)
+        x = gap + col * (cell + gap) + row_offset
+        y = gap + row * (cell + gap)
+        canvas.paste(thumb, (x, y))
 
     # JPEG'ga qayta kodlash asl fayldagi metadata/EXIF va boshqa "payload"larni
     # ham tashlab yuboradi — kanalga faqat piksellar boradi, xom fayl emas.
