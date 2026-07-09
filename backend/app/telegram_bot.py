@@ -25,6 +25,9 @@ MINI_APP_URL = os.getenv("MINI_APP_URL", "https://example.com")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "")
 # Tasdiqlangan e'lonlar avtomatik joylanadigan kanal: @kanal_username yoki -100... ko'rinishidagi ID
 CHANNEL_ID = os.getenv("CHANNEL_ID", "").strip()
+# BotFather'da /newapp orqali yaratilgan Mini App short name (masalan "Autosavdo") —
+# kanal tugmasidan bitta bosishda to'g'ridan-to'g'ri Mini App ochilishi uchun kerak.
+MINI_APP_SHORT_NAME = os.getenv("MINI_APP_SHORT_NAME", "Autosavdo").strip()
 
 bot = Bot(token=BOT_TOKEN) if BOT_TOKEN else None
 dp = Dispatcher()
@@ -85,7 +88,10 @@ async def post_to_channel(listing: Listing):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
             text="🚗 Barcha e'lonlarni ko'rish",
-            url=f"https://t.me/{BOT_USERNAME}" if BOT_USERNAME else MINI_APP_URL,
+            url=(
+                f"https://t.me/{BOT_USERNAME}/{MINI_APP_SHORT_NAME}?startapp=channel"
+                if BOT_USERNAME else MINI_APP_URL
+            ),
         )
     ]])
 
