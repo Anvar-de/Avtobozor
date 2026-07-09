@@ -24,7 +24,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # formatdan olinadi — ba'zi brauzer/WebView'lar PNG/WEBP fayllar uchun noaniq
 # yoki boshqacha Content-Type yuborishi mumkin, bu esa haqiqiy rasmni asossiz rad etardi.
 ALLOWED_IMAGE_FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
-MAX_PHOTOS_PER_LISTING = 8
+MAX_PHOTOS_PER_LISTING = 4
 
 
 @router.get("", response_model=list[ListingOut])
