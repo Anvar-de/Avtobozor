@@ -135,6 +135,12 @@ async def upload_photo(
     contents = await file.read()
     try:
         Image.open(io.BytesIO(contents)).verify()
+        # verify() faqat fayl strukturasini tekshiradi, piksellarni to'liq
+        # dekodlamaydi — ba'zi buzuq WEBP/PNG fayllar shu tekshiruvdan o'tib
+        # ketib, keyinroq (masalan kanal kollajida) dekodlashda muvaffaqiyatsiz
+        # bo'lishi mumkin edi. Shuning uchun bu yerda to'liq dekodlab ko'ramiz
+        # (verify() dan keyin obyektni qayta ishlatib bo'lmaydi, shu sabab qayta ochamiz).
+        Image.open(io.BytesIO(contents)).load()
     except Exception:
         raise HTTPException(status_code=400, detail="Fayl haqiqiy rasm emas")
 

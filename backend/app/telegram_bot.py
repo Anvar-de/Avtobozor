@@ -76,7 +76,7 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
     asyncio.to_thread orqali alohida oqimda chaqiriladi — shunda noto'g'ri yoki
     og'ir rasm bot event loop'ini to'xtatib qo'ymaydi."""
     images: list[Image.Image] = []
-    for data in images_bytes:
+    for idx, data in enumerate(images_bytes):
         try:
             img = Image.open(io.BytesIO(data))
             img.load()  # to'liq dekodlaydi — buzuq fayl bo'lsa shu yerda xato chiqadi
@@ -85,7 +85,7 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
             # DecompressionBombError bilan rad etadi — atayin o'chirilmagan.
             images.append(img.convert("RGB"))
         except Exception:
-            logger.warning("Kollaj uchun bitta rasmni dekodlab bo'lmadi, o'tkazib yuborildi")
+            logger.warning("Kollaj uchun %d-rasmni dekodlab bo'lmadi, o'tkazib yuborildi", idx, exc_info=True)
 
     if not images:
         return None
@@ -145,6 +145,11 @@ async def _build_collage(photo_urls: list[str]) -> bytes | None:
     except Exception:
         logger.exception("Kollaj uchun rasmlarni yuklab olishda xatolik")
         return None
+
+    if len(images_bytes) < len(urls):
+        logger.warning(
+            "Kollaj uchun %d/%d rasm muvaffaqiyatli yuklab olindi", len(images_bytes), len(urls)
+        )
 
     if not images_bytes:
         return None
