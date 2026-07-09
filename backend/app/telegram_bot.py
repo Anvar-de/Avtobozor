@@ -36,7 +36,7 @@ MINI_APP_SHORT_NAME = os.getenv("MINI_APP_SHORT_NAME", "Autosavdo").strip()
 # Kanal posti uchun bir nechta e'lon rasmidan yasaladigan kollaj sozlamalari.
 # Cheklovlar xotira/CPU'ni yeb ketadigan yoki osilib qoladigan holatlarning oldini olish uchun.
 COLLAGE_MAX_PHOTOS = 9  # kollajga kiritiladigan rasmlar soni (3x3 grid)
-COLLAGE_CELL_SIZE = 500  # har bir katakcha o'lchami (piksel)
+COLLAGE_SIZE = 2048  # kollaj doim shu o'lchamda (kvadrat, piksel) chiqadi
 COLLAGE_FETCH_TIMEOUT = 10.0  # har bir rasmni yuklab olish uchun maksimal soniya
 COLLAGE_MAX_PHOTO_BYTES = 15 * 1024 * 1024  # bitta rasm uchun xavfsizlik chegarasi
 
@@ -100,12 +100,12 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
     rows = (n + cols - 1) // cols
 
     gap = 6  # katakchalar orasidagi bo'shliq (piksel)
-    cell = COLLAGE_CELL_SIZE
-    canvas = Image.new(
-        "RGB",
-        (cell * cols + gap * (cols + 1), cell * rows + gap * (rows + 1)),
-        "white",
-    )
+    # Kollaj hajmi doim COLLAGE_SIZE x COLLAGE_SIZE bo'lishi uchun, katakcha
+    # o'lchamini ustun/qator soniga qarab hisoblaymiz (grid holatiga qarab
+    # katakcha kvadrat bo'lmasligi ham mumkin — masalan 3 ustunli 2 qatorda).
+    cell_w = (COLLAGE_SIZE - gap * (cols + 1)) // cols
+    cell_h = (COLLAGE_SIZE - gap * (rows + 1)) // rows
+    canvas = Image.new("RGB", (COLLAGE_SIZE, COLLAGE_SIZE), "white")
 
     last_row_count = n - cols * (rows - 1)  # oxirgi qatordagi rasmlar soni
     for i, img in enumerate(images):
@@ -113,12 +113,12 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
         row_items = last_row_count if row == rows - 1 else cols
         # Oxirgi qator to'liq emas bo'lsa (masalan 3 ustunga 2 ta rasm qolsa),
         # bo'sh joy chetda emas, qator markazida bo'linadi — tekis ko'rinadi.
-        row_offset = ((cols - row_items) * (cell + gap)) // 2
+        row_offset = ((cols - row_items) * (cell_w + gap)) // 2
         # thumbnail+pad o'rniga "cover" crop qilamiz — katakcha to'liq to'ladi,
         # atrofida oq chiziqlar qolmaydi.
-        thumb = ImageOps.fit(img, (cell, cell), method=Image.LANCZOS)
-        x = gap + col * (cell + gap) + row_offset
-        y = gap + row * (cell + gap)
+        thumb = ImageOps.fit(img, (cell_w, cell_h), method=Image.LANCZOS)
+        x = gap + col * (cell_w + gap) + row_offset
+        y = gap + row * (cell_h + gap)
         canvas.paste(thumb, (x, y))
 
     # JPEG'ga qayta kodlash asl fayldagi metadata/EXIF va boshqa "payload"larni
