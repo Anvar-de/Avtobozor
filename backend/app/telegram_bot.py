@@ -110,17 +110,21 @@ async def post_to_channel(listing: Listing):
             )
         elif len(photo_urls) > 1:
             # Telegram sendMediaGroup tugma (reply_markup) qo'shishga ruxsat bermaydi,
-            # shuning uchun avval albom (barcha rasmlar), keyin tugmali kichik xabar yuboramiz.
-            media = [
-                InputMediaPhoto(media=url, caption=caption if i == 0 else None, parse_mode="HTML")
-                for i, url in enumerate(photo_urls[:10])  # Telegram albomda maksimal 10 ta rasm
-            ]
-            await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
-            # Telegram bo'sh matnli xabar yuborishga ruxsat bermaydi, shuning uchun
-            # ko'rinmas belgi ishlatamiz — foydalanuvchiga faqat tugma ko'rinadi.
-            await bot.send_message(
+            # shuning uchun oxirgi rasmni caption+tugma bilan ALOHIDA yuboramiz —
+            # shunda tugma xuddi bitta rasmli e'londagidek matnga "yopishib" turadi,
+            # qolgan rasmlar esa undan oldin albom qilib joylanadi.
+            photo_urls = photo_urls[:10]  # Telegram albomda maksimal 10 ta rasm
+            lead_photos, last_photo = photo_urls[:-1], photo_urls[-1]
+            if len(lead_photos) == 1:
+                await bot.send_photo(chat_id=CHANNEL_ID, photo=lead_photos[0])
+            else:
+                media = [InputMediaPhoto(media=url) for url in lead_photos]
+                await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
+            await bot.send_photo(
                 chat_id=CHANNEL_ID,
-                text="⁣",
+                photo=last_photo,
+                caption=caption,
+                parse_mode="HTML",
                 reply_markup=keyboard,
             )
         else:
