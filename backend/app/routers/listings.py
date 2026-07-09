@@ -20,7 +20,10 @@ UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 # Kengaytma shu xaritadan olinadi (foydalanuvchi yuborgan fayl nomidan emas) —
 # aks holda hujumchi ".jpg" rasm sifatida ".svg"/".html" fayl yuklab, XSS qilishi mumkin edi.
-ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+# Kengaytma brauzer yuborgan Content-Type'dan emas, Pillow aniqlagan HAQIQIY
+# formatdan olinadi — ba'zi brauzer/WebView'lar PNG/WEBP fayllar uchun noaniq
+# yoki boshqacha Content-Type yuborishi mumkin, bu esa haqiqiy rasmni asossiz rad etardi.
+ALLOWED_IMAGE_FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
 MAX_PHOTOS_PER_LISTING = 8
 
 
@@ -129,22 +132,25 @@ async def upload_photo(
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
     if len(listing.photos) >= MAX_PHOTOS_PER_LISTING:
         raise HTTPException(status_code=400, detail=f"Ko'pi bilan {MAX_PHOTOS_PER_LISTING} ta rasm yuklash mumkin")
-    if file.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status_code=400, detail="Faqat JPEG, PNG yoki WEBP rasm qabul qilinadi")
 
     contents = await file.read()
     try:
         Image.open(io.BytesIO(contents)).verify()
         # verify() faqat fayl strukturasini tekshiradi, piksellarni to'liq
-        # dekodlamaydi — ba'zi buzuq WEBP/PNG fayllar shu tekshiruvdan o'tib
-        # ketib, keyinroq (masalan kanal kollajida) dekodlashda muvaffaqiyatsiz
-        # bo'lishi mumkin edi. Shuning uchun bu yerda to'liq dekodlab ko'ramiz
-        # (verify() dan keyin obyektni qayta ishlatib bo'lmaydi, shu sabab qayta ochamiz).
-        Image.open(io.BytesIO(contents)).load()
+        # dekodlamaydi — ba'zi buzuq fayllar shu tekshiruvdan o'tib ketib,
+        # keyinroq (masalan kanal kollajida) dekodlashda muvaffaqiyatsiz bo'lishi
+        # mumkin edi. Shuning uchun bu yerda to'liq dekodlab ko'ramiz (verify()
+        # dan keyin obyektni qayta ishlatib bo'lmaydi, shu sabab qayta ochamiz).
+        img = Image.open(io.BytesIO(contents))
+        img.load()
+        fmt = img.format
     except Exception:
         raise HTTPException(status_code=400, detail="Fayl haqiqiy rasm emas")
 
-    ext = ALLOWED_IMAGE_TYPES[file.content_type]
+    if fmt not in ALLOWED_IMAGE_FORMATS:
+        raise HTTPException(status_code=400, detail="Faqat JPEG, PNG yoki WEBP rasm qabul qilinadi")
+
+    ext = ALLOWED_IMAGE_FORMATS[fmt]
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(UPLOAD_DIR, filename)
 

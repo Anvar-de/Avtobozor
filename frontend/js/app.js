@@ -273,13 +273,25 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
   try {
     const listing = await api("/api/listings", { method: "POST", body: payload });
 
+    // Har bir faylni ALOHIDA try/catch bilan yuklaymiz — aks holda bitta buzuq
+    // fayl (masalan noodatiy PNG) butun tsiklni to'xtatib, undan keyingi barcha
+    // rasmlar serverga umuman yetib bormay qolardi.
+    const failedNames = [];
     for (const file of photoInput.files) {
-      const photoForm = new FormData();
-      photoForm.append("file", file);
-      await api(`/api/listings/${listing.id}/photos`, { method: "POST", body: photoForm, isForm: true });
+      try {
+        const photoForm = new FormData();
+        photoForm.append("file", file);
+        await api(`/api/listings/${listing.id}/photos`, { method: "POST", body: photoForm, isForm: true });
+      } catch (photoErr) {
+        failedNames.push(file.name);
+      }
     }
 
-    showToast("E'lon yuborildi! Admin tasdiqlagach ro'yxatda ko'rinadi.");
+    if (failedNames.length) {
+      showToast(`E'lon yuborildi, lekin ${failedNames.length} ta rasm yuklanmadi: ${failedNames.join(", ")}`);
+    } else {
+      showToast("E'lon yuborildi! Admin tasdiqlagach ro'yxatda ko'rinadi.");
+    }
     form.reset();
     showView("my");
     loadMyListings();
