@@ -91,12 +91,10 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
         return None
 
     n = len(images)
-    # WhatsApp/Instagram uslubidagi "chiroyli" ustun soni: 1→1, 2→2, 3→3,
-    # 4→2x2 (kvadrat), 5 dan ko'p bo'lsa 3 ustun (masalan 5 ta = 3+2, 7 ta = 3+3+1).
-    if n == 4:
-        cols = 2
-    else:
-        cols = min(n, 3)
+    # Har doim maksimal 2 ustun: 1 ta rasm — yakka; 2 ta rasm — tepa-pastga
+    # (1 ustun, 2 qavat); 3 tadan ko'p bo'lsa — 2 ustunli qavatlarga bo'linadi,
+    # oxirgi qavatda 1 yoki 2 rasm qoladi (masalan 5 ta = 2+2+1, 7 ta = 2+2+2+1).
+    cols = 1 if n <= 2 else 2
     rows = (n + cols - 1) // cols
 
     gap = 6  # katakchalar orasidagi bo'shliq (piksel)
