@@ -34,7 +34,7 @@ class ListingCreate(BaseModel):
     transmission: Optional[str] = Field(None, max_length=30)
     fuel_type: Optional[str] = Field(None, max_length=30)
     region: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: Optional[str] = Field(None, max_length=300)
     contact_phone: Optional[str] = Field(None, max_length=20)
 
     @field_validator("brand", "model")
@@ -54,7 +54,7 @@ class ListingUpdate(BaseModel):
     transmission: Optional[str] = Field(None, max_length=30)
     fuel_type: Optional[str] = Field(None, max_length=30)
     region: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: Optional[str] = Field(None, max_length=300)
     contact_phone: Optional[str] = Field(None, max_length=20)
     status: Optional[ListingStatus] = None
 

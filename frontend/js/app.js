@@ -82,6 +82,7 @@ const views = {
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => (el.hidden = key !== name));
+  document.getElementById("btnCreate").hidden = name === "create";
   window.scrollTo(0, 0);
 }
 
