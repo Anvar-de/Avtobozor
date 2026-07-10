@@ -87,7 +87,12 @@ function showView(name) {
 }
 
 document.querySelectorAll("[data-back]").forEach((btn) => {
-  btn.addEventListener("click", () => showView(btn.dataset.back));
+  btn.addEventListener("click", () => {
+    showView(btn.dataset.back);
+    // Ro'yxat sahifasiga qaytilganda uni qayta yuklaymiz — aks holda
+    // o'chirilgan/o'zgartirilgan e'lon eski (keshlangan) holatda ko'rinib qolardi.
+    if (btn.dataset.back === "feed") loadFeed();
+  });
 });
 
 // ============================================================
