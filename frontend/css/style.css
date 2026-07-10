@@ -242,7 +242,10 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 /* ---------- Detail view ---------- */
-.view { padding: 6px 16px 20px; }
+/* Pastki padding suzuvchi (fixed) tugmalar (.fab, 56px + 22px bo'shliq)
+   ostida kontent (masalan Tavsif maydoni yoki egasining tugmalari)
+   yashirinib qolmasligi uchun kattalashtirilgan. */
+.view { padding: 6px 16px 100px; }
 
 .back-btn {
   background: none;
@@ -250,12 +253,6 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--text-muted);
   font-size: 14px;
   padding: 10px 0;
-}
-
-.back-btn--bottom {
-  display: block;
-  width: 100%;
-  margin-top: 16px;
 }
 
 .section-title {
@@ -410,7 +407,10 @@ input[type="number"]::-webkit-inner-spin-button {
   right: 22px;
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
   background: var(--accent);
   color: var(--accent-ink);
   border: none;
@@ -420,6 +420,12 @@ input[type="number"]::-webkit-inner-spin-button {
   z-index: 20;
 }
 .fab:active { filter: brightness(0.92); }
+
+.fab--back {
+  right: auto;
+  left: 22px;
+  font-size: 24px;
+}
 
 /* ---------- Toast ---------- */
 .toast {

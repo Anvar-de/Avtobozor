@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=6" />
+<link rel="stylesheet" href="css/style.css?v=7" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -46,7 +46,7 @@
   <main class="view" id="view-detail" hidden>
     <button class="back-btn" data-back="feed">← Ro'yxatga</button>
     <div id="detailContent"></div>
-    <button class="back-btn back-btn--bottom" data-back="feed">← Ro'yxatga</button>
+    <button class="fab fab--back" data-back="feed" aria-label="Ro'yxatga qaytish">←</button>
   </main>
 
   <!-- ============ MY LISTINGS VIEW ============ -->
@@ -57,7 +57,7 @@
     <div class="empty-state" id="myEmpty" hidden>
       <p>Siz hali e'lon joylamagansiz.</p>
     </div>
-    <button class="back-btn back-btn--bottom" data-back="feed">← Ro'yxatga</button>
+    <button class="fab fab--back" data-back="feed" aria-label="Ro'yxatga qaytish">←</button>
   </main>
 
   <!-- ============ CREATE VIEW ============ -->
@@ -99,7 +99,7 @@
       <button type="submit" class="submit-btn">E'lonni joylash</button>
       <p class="form-hint">E'lon joylashdan oldin admin tomonidan ko'rib chiqiladi.</p>
     </form>
-    <button class="back-btn back-btn--bottom" data-back="feed">← Ro'yxatga</button>
+    <button class="fab fab--back" data-back="feed" aria-label="Ro'yxatga qaytish">←</button>
   </main>
 
   <!-- Pastki tugma -->
