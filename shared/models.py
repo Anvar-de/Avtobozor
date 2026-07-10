@@ -48,6 +48,7 @@ class Listing(Base):
     contact_phone = Column(String, nullable=True)
 
     status = Column(Enum(ListingStatus), default=ListingStatus.pending, nullable=False)
+    views_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

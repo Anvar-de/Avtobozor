@@ -73,6 +73,7 @@ class ListingOut(BaseModel):
     description: Optional[str] = None
     contact_phone: Optional[str] = None
     status: ListingStatus
+    views_count: int = 0
     created_at: datetime
     photos: list[PhotoOut] = []
 

@@ -183,6 +183,13 @@ button, input, select, textarea {
   color: var(--text-muted);
 }
 
+.views {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 .status-dot {
   display: inline-flex;
   align-items: center;

@@ -96,6 +96,10 @@ def get_listing(
         if listing.user_id != user.id:
             raise HTTPException(status_code=404, detail="E'lon topilmadi")
 
+    listing.views_count += 1
+    db.commit()
+    db.refresh(listing)
+
     return listing
 
 

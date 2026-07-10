@@ -107,6 +107,7 @@ function renderCard(listing, { showStatus = false } = {}) {
       <div class="card__meta">
         <span class="odo">${formatKm(listing.mileage)}</span>
         <span class="tag">${listing.region || ""}</span>
+        <span class="views">👁 ${listing.views_count || 0}</span>
       </div>
       ${showStatus ? `<span class="status-dot status-dot--${listing.status}">${STATUS_LABELS[listing.status]}</span>` : ""}
     </div>

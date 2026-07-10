@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from aiogram.types import Update
+from sqlalchemy import inspect, text
 
 from shared.database import Base, engine
 from .routers import auth, listings
@@ -17,6 +18,16 @@ from .telegram_bot import bot, dp, setup_menu_button, resolve_bot_username
 
 # Jadvallarni yaratish (production'da Alembic migratsiya ishlatish tavsiya etiladi)
 Base.metadata.create_all(bind=engine)
+
+# create_all() mavjud jadvalga yangi ustun qo'shmaydi — Alembic yo'qligi sabab,
+# eski bazalarda "listings.views_count" ustuni yo'q bo'lib qolmasligi uchun
+# shu yerda qo'lda tekshirib qo'shamiz.
+_inspector = inspect(engine)
+if "listings" in _inspector.get_table_names():
+    _existing_columns = {c["name"] for c in _inspector.get_columns("listings")}
+    if "views_count" not in _existing_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE listings ADD COLUMN views_count INTEGER NOT NULL DEFAULT 0"))
 
 app = FastAPI(title="Avto E'lonlar Mini App API")
 
