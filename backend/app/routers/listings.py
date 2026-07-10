@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from PIL import Image
 from pillow_heif import register_heif_opener
-from sqlalchemy import or_
+from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session, joinedload
 
 from shared.database import get_db
@@ -49,11 +49,23 @@ def list_listings(
         Listing.status == ListingStatus.approved
     )
     if search:
-        # Bitta qidiruv maydoni — marka, model yoki hudud bo'yicha mos keladi.
-        like = f"%{search}%"
-        q = q.filter(
-            or_(Listing.brand.ilike(like), Listing.model.ilike(like), Listing.region.ilike(like))
-        )
+        # Bitta qidiruv maydoni, bir nechta so'z bilan: har bir so'z e'londagi
+        # to'ldirilgan istalgan maydonda (matnli yoki raqamli) topilishi kerak
+        # (so'zlar orasida AND, bitta so'z uchun maydonlar orasida OR) —
+        # masalan "Cobalt Toshkent" ikkala so'z ham mos kelgan e'lonlarni topadi.
+        text_columns = [
+            Listing.brand, Listing.model, Listing.transmission,
+            Listing.fuel_type, Listing.region, Listing.description, Listing.contact_phone,
+        ]
+        numeric_columns = [Listing.year, Listing.price, Listing.mileage]
+        for word in search.split():
+            like = f"%{word}%"
+            q = q.filter(
+                or_(
+                    *[col.ilike(like) for col in text_columns],
+                    *[cast(col, String).ilike(like) for col in numeric_columns],
+                )
+            )
     if brand:
         q = q.filter(Listing.brand.ilike(f"%{brand}%"))
     if region:
