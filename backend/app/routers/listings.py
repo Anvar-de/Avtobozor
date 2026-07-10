@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from PIL import Image
 from pillow_heif import register_heif_opener
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from shared.database import get_db
@@ -33,6 +34,7 @@ MAX_PHOTOS_PER_LISTING = 4
 @router.get("", response_model=list[ListingOut])
 def list_listings(
     db: Session = Depends(get_db),
+    search: Optional[str] = None,
     brand: Optional[str] = None,
     region: Optional[str] = None,
     min_price: Optional[float] = None,
@@ -46,6 +48,12 @@ def list_listings(
     q = db.query(Listing).options(joinedload(Listing.photos)).filter(
         Listing.status == ListingStatus.approved
     )
+    if search:
+        # Bitta qidiruv maydoni — marka, model yoki hudud bo'yicha mos keladi.
+        like = f"%{search}%"
+        q = q.filter(
+            or_(Listing.brand.ilike(like), Listing.model.ilike(like), Listing.region.ilike(like))
+        )
     if brand:
         q = q.filter(Listing.brand.ilike(f"%{brand}%"))
     if region:

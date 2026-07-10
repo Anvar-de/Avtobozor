@@ -140,14 +140,8 @@ async function loadFeed() {
   grid.innerHTML = "";
 
   const params = new URLSearchParams();
-  const brand = document.getElementById("fBrand").value.trim();
-  const region = document.getElementById("fRegion").value.trim();
-  const minYear = document.getElementById("fMinYear").value;
-  const maxPrice = document.getElementById("fMaxPrice").value;
-  if (brand) params.set("brand", brand);
-  if (region) params.set("region", region);
-  if (minYear) params.set("min_year", minYear);
-  if (maxPrice) params.set("max_price", maxPrice);
+  const search = document.getElementById("fSearch").value.trim();
+  if (search) params.set("search", search);
 
   try {
     const listings = await api(`/api/listings?${params.toString()}`);
