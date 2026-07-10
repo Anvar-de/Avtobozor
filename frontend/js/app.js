@@ -97,6 +97,7 @@ function renderCard(listing, { showStatus = false } = {}) {
   const cover = listing.photos?.[0];
   const div = document.createElement("div");
   div.className = "card";
+  div.dataset.listingId = listing.id;
   div.innerHTML = `
     <div class="card__photo" style="${cover ? `background-image:url('${API_BASE}${cover.file_path}')` : ""}">
       ${cover ? "" : "Rasm yo'q"}
@@ -107,7 +108,7 @@ function renderCard(listing, { showStatus = false } = {}) {
       <div class="card__meta">
         <span class="odo">${formatKm(listing.mileage)}</span>
         <span class="tag">${listing.region || ""}</span>
-        <span class="views">👁 ${listing.views_count || 0}</span>
+        <span class="views" data-views-count>👁 ${listing.views_count || 0}</span>
       </div>
       ${showStatus ? `<span class="status-dot status-dot--${listing.status}">${STATUS_LABELS[listing.status]}</span>` : ""}
     </div>
@@ -161,6 +162,11 @@ async function openDetail(id) {
     const l = await api(`/api/listings/${id}`);
     const me = await api("/api/auth/me", { method: "POST" });
     const isOwner = me.id === l.user_id;
+
+    // Kartalar ro'yxati qayta yuklanmasa ham, ko'rishlar sonini darhol yangilaymiz
+    document.querySelectorAll(`.card[data-listing-id="${l.id}"] [data-views-count]`).forEach((el) => {
+      el.textContent = `👁 ${l.views_count}`;
+    });
 
     const gallery = l.photos?.length
       ? `<div class="detail-gallery">${l.photos.map((p) => `<img src="${API_BASE}${p.file_path}" />`).join("")}</div>`
