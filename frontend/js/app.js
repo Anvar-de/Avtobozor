@@ -335,6 +335,15 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
       }
     }
 
+    // Rasmlar yuklab bo'lingandan keyin chaqiramiz — shunda adminga
+    // yuboriladigan xabarda ular ham (kollaj holida) ko'rinadi.
+    try {
+      await api(`/api/listings/${listing.id}/submit`, { method: "POST" });
+    } catch (submitErr) {
+      // E'lon va rasmlar allaqachon saqlangan — admin xabari yetib bormasa ham
+      // foydalanuvchiga xatolik ko'rsatmaymiz, e'lon baribir ko'rib chiqiladi.
+    }
+
     if (failedNames.length) {
       showToast(`E'lon yuborildi, lekin ${failedNames.length} ta rasm yuklanmadi: ${failedNames.join(", ")}`);
     } else {

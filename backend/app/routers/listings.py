@@ -112,14 +112,15 @@ async def create_listing(
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
 ):
-    """Yangi e'lon yaratadi — status avtomatik 'pending' bo'ladi va admin xabar oladi."""
+    """Yangi e'lon yaratadi — status avtomatik 'pending' bo'ladi. Admin xabari
+    bu yerda emas, /submit chaqirilganda yuboriladi (shu vaqtga kelib rasmlar
+    ham yuklab bo'lingan bo'ladi, xabarda ular ham ko'rinadi)."""
     user = get_or_create_user(db, tg_user)
     listing = Listing(user_id=user.id, **payload.model_dump())
     db.add(listing)
     db.commit()
     db.refresh(listing)
 
-    await notify_admin_new_listing(listing)
     return listing
 
 
@@ -177,6 +178,30 @@ async def upload_photo(
     db.add(photo)
     db.commit()
     db.refresh(listing)
+    return listing
+
+
+@router.post("/{listing_id}/submit", response_model=ListingOut)
+async def submit_listing(
+    listing_id: int,
+    db: Session = Depends(get_db),
+    tg_user: dict = Depends(get_telegram_user),
+):
+    """Rasmlarni yuklab bo'lgach chaqiriladi — shu payt admin (rasmlari va
+    yuboruvchi havolasi bilan) xabar oladi."""
+    user = get_or_create_user(db, tg_user)
+    listing = (
+        db.query(Listing)
+        .options(joinedload(Listing.photos))
+        .filter(Listing.id == listing_id)
+        .first()
+    )
+    if not listing:
+        raise HTTPException(status_code=404, detail="E'lon topilmadi")
+    if listing.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
+
+    await notify_admin_new_listing(listing)
     return listing
 
 

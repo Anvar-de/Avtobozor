@@ -344,7 +344,16 @@ async def moderation_handler(callback: CallbackQuery):
         db.commit()
 
         status_text = "✅ tasdiqlandi" if action == "approve" else "❌ rad etildi"
-        await callback.message.edit_text(f"{callback.message.text}\n\nHolat: {status_text}")
+        # Admin xabari rasmli/kollajli bo'lishi mumkin (caption) yoki oddiy matn
+        # (rasm bo'lmasa) — ikkisi turlicha tahrirlanadi. callback.message.text/
+        # .caption Telegram tomonidan formatlashsiz (entity'lar olib tashlangan)
+        # qaytariladi, shu sabab qayta yuborishda parse_mode berilmaydi — aks
+        # holda ichidagi "<"/">" belgilari xato HTML sifatida talqin qilinib,
+        # Telegram API xatolik qaytarishi mumkin edi.
+        if callback.message.photo:
+            await callback.message.edit_caption(caption=f"{callback.message.caption}\n\nHolat: {status_text}")
+        else:
+            await callback.message.edit_text(f"{callback.message.text}\n\nHolat: {status_text}")
         await callback.answer(f"E'lon {status_text}")
 
         owner = listing.owner
