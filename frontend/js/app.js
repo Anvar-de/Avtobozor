@@ -152,6 +152,9 @@ async function loadFeed() {
   try {
     const listings = await api(`/api/listings?${params.toString()}`);
     if (!listings.length) {
+      empty.querySelector("p").innerHTML = params.toString()
+        ? "Siz kiritgan parametrlar bo'yicha e'lon topilmadi"
+        : "Hozircha e'lon yo'q.<br/>Birinchi bo'lib joylang!";
       empty.hidden = false;
     } else {
       empty.hidden = true;
