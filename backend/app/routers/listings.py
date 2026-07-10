@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from PIL import Image
+from pillow_heif import register_heif_opener
 from sqlalchemy.orm import Session, joinedload
 
 from shared.database import get_db
@@ -13,6 +14,8 @@ from ..telegram_auth import get_telegram_user
 from ..telegram_notify import notify_admin_new_listing
 from ..schemas import ListingCreate, ListingUpdate, ListingOut
 from .auth import get_or_create_user
+
+register_heif_opener()
 
 router = APIRouter(prefix="/api/listings", tags=["listings"])
 
@@ -150,6 +153,14 @@ async def upload_photo(
         fmt = img.format
     except Exception:
         raise HTTPException(status_code=400, detail="Fayl haqiqiy rasm emas")
+
+    if fmt in ("HEIF", "HEIC"):
+        # iPhone'lar odatda HEIC formatida suratga oladi — brauzerlar buni
+        # ko'rsata olmaydi, shu sabab JPEG'ga konvertatsiya qilib saqlaymiz.
+        buffer = io.BytesIO()
+        img.convert("RGB").save(buffer, format="JPEG", quality=90)
+        contents = buffer.getvalue()
+        fmt = "JPEG"
 
     if fmt not in ALLOWED_IMAGE_FORMATS:
         raise HTTPException(status_code=400, detail="Faqat JPEG, PNG yoki WEBP rasm qabul qilinadi")
