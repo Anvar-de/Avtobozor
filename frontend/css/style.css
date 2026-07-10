@@ -99,6 +99,16 @@ button, input, select, textarea {
   font-size: 14px;
 }
 .chip-input::placeholder { color: var(--text-muted); }
+
+/* Number input spinner (ko'paytirish/kamaytirish tugmalari) yashirilgan */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 .chip-btn {
   grid-column: 1 / -1;
   background: var(--accent);
