@@ -87,11 +87,20 @@ function showView(name) {
 }
 
 document.querySelectorAll("[data-back]").forEach((btn) => {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     showView(btn.dataset.back);
     // Ro'yxat sahifasiga qaytilganda uni qayta yuklaymiz — aks holda
     // o'chirilgan/o'zgartirilgan e'lon eski (keshlangan) holatda ko'rinib qolardi.
-    if (btn.dataset.back === "feed") loadFeed();
+    if (btn.dataset.back === "feed") {
+      await loadFeed();
+      // showView yuqoriga scroll qilib qo'yadi — oxirgi ochilgan e'lon
+      // hali ham ro'yxatda bo'lsa, foydalanuvchini o'sha kartaga qaytaramiz.
+      if (lastOpenedListingId != null) {
+        document
+          .querySelector(`.card[data-listing-id="${lastOpenedListingId}"]`)
+          ?.scrollIntoView({ block: "center" });
+      }
+    }
   });
 });
 
@@ -158,7 +167,10 @@ document.getElementById("btnFilter").addEventListener("click", loadFeed);
 // ============================================================
 // DETAIL
 // ============================================================
+let lastOpenedListingId = null;
+
 async function openDetail(id) {
+  lastOpenedListingId = id;
   showView("detail");
   const content = document.getElementById("detailContent");
   content.innerHTML = "<p>Yuklanmoqda...</p>";
