@@ -254,6 +254,26 @@ document.getElementById("btnMyListings").addEventListener("click", () => {
 // ============================================================
 document.getElementById("btnCreate").addEventListener("click", () => showView("create"));
 
+// Foydalanuvchi kiritayotgan raqamni minglik bo'laklarga ajratib ko'rsatadi
+// (masalan "5287400" -> "5 287 400"), shu bilan birga kursor pozitsiyasini saqlaydi.
+function attachThousandsFormatter(input) {
+  input.addEventListener("input", () => {
+    const digitsBeforeCursor = input.value.slice(0, input.selectionStart).replace(/\D/g, "").length;
+    const digits = input.value.replace(/\D/g, "");
+    input.value = digits ? new Intl.NumberFormat("uz-UZ").format(Number(digits)) : "";
+
+    let pos = 0;
+    let count = 0;
+    while (pos < input.value.length && count < digitsBeforeCursor) {
+      if (/\d/.test(input.value[pos])) count++;
+      pos++;
+    }
+    input.setSelectionRange(pos, pos);
+  });
+}
+attachThousandsFormatter(document.getElementById("cMileage"));
+attachThousandsFormatter(document.getElementById("cPrice"));
+
 document.getElementById("createForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target;
@@ -269,8 +289,8 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     brand: fd.get("brand"),
     model: fd.get("model"),
     year: Number(fd.get("year")),
-    mileage: Number(fd.get("mileage")),
-    price: Number(fd.get("price")),
+    mileage: Number(String(fd.get("mileage")).replace(/\D/g, "")),
+    price: Number(String(fd.get("price")).replace(/\D/g, "")),
     transmission: fd.get("transmission") || null,
     fuel_type: fd.get("fuel_type") || null,
     region: fd.get("region") || null,

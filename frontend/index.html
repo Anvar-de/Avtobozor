@@ -72,9 +72,9 @@
       <label>Model *<input required name="model" type="text" placeholder="Cobalt" /></label>
       <div class="form-row">
         <label>Yili *<input required name="year" type="number" min="1970" max="2027" placeholder="2021" /></label>
-        <label>Probeg, km *<input required name="mileage" type="number" min="0" max="2000000" placeholder="45000" /></label>
+        <label>Probeg, km *<input required name="mileage" id="cMileage" type="text" inputmode="numeric" autocomplete="off" placeholder="45 000" /></label>
       </div>
-      <label>Narxi, so'm *<input required name="price" type="number" min="1" step="1" placeholder="180000000" /></label>
+      <label>Narxi, so'm *<input required name="price" id="cPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="180 000 000" /></label>
       <div class="form-row">
         <label>Uzatma
           <select name="transmission">
@@ -111,6 +111,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/app.js?v=6"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>
