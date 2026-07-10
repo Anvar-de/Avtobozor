@@ -235,6 +235,12 @@ button, input, select, textarea {
   padding: 10px 0;
 }
 
+.back-btn--bottom {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+}
+
 .section-title {
   font-family: var(--font-display);
   font-size: 20px;
