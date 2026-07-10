@@ -37,6 +37,7 @@ def list_listings(
     search: Optional[str] = None,
     brand: Optional[str] = None,
     region: Optional[str] = None,
+    district: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     min_year: Optional[int] = None,
@@ -55,7 +56,8 @@ def list_listings(
         # masalan "Cobalt Toshkent" ikkala so'z ham mos kelgan e'lonlarni topadi.
         text_columns = [
             Listing.brand, Listing.model, Listing.transmission,
-            Listing.fuel_type, Listing.region, Listing.description, Listing.contact_phone,
+            Listing.fuel_type, Listing.region, Listing.district,
+            Listing.description, Listing.contact_phone,
         ]
         numeric_columns = [Listing.year, Listing.price, Listing.mileage]
         for word in search.split():
@@ -70,6 +72,8 @@ def list_listings(
         q = q.filter(Listing.brand.ilike(f"%{brand}%"))
     if region:
         q = q.filter(Listing.region.ilike(f"%{region}%"))
+    if district:
+        q = q.filter(Listing.district.ilike(f"%{district}%"))
     if min_price is not None:
         q = q.filter(Listing.price >= min_price)
     if max_price is not None:

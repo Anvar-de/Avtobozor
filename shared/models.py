@@ -44,6 +44,7 @@ class Listing(Base):
     transmission = Column(String, nullable=True)      # avtomat / mexanika
     fuel_type = Column(String, nullable=True)         # benzin / gaz / dizel / gibrid
     region = Column(String, nullable=True)            # Toshkent, Samarqand...
+    district = Column(String, nullable=True)           # Chilonzor, Chust...
     description = Column(Text, nullable=True)
     contact_phone = Column(String, nullable=True)
 

@@ -121,7 +121,7 @@ function renderCard(listing, { showStatus = false } = {}) {
       <div class="card__price">${formatPrice(listing.price)}</div>
       <div class="card__meta">
         <span class="odo">${formatKm(listing.mileage)}</span>
-        <span class="tag">${listing.region || ""}</span>
+        <span class="tag">${[listing.district, listing.region].filter(Boolean).join(", ")}</span>
         <span class="views" data-views-count>👁 ${listing.views_count || 0}</span>
       </div>
       ${showStatus ? `<span class="status-dot status-dot--${listing.status}">${STATUS_LABELS[listing.status]}</span>` : ""}
@@ -196,6 +196,7 @@ async function openDetail(id) {
         <div class="spec"><div class="spec__label">Uzatma</div><div class="spec__value">${l.transmission || "—"}</div></div>
         <div class="spec"><div class="spec__label">Yoqilg'i</div><div class="spec__value">${l.fuel_type || "—"}</div></div>
         <div class="spec"><div class="spec__label">Hudud</div><div class="spec__value">${l.region || "—"}</div></div>
+        <div class="spec"><div class="spec__label">Shahar/tuman</div><div class="spec__value">${l.district || "—"}</div></div>
         <div class="spec"><div class="spec__label">Holati</div><div class="spec__value">${STATUS_LABELS[l.status]}</div></div>
       </div>
       ${l.description ? `<div class="detail-desc">${l.description}</div>` : ""}
@@ -268,6 +269,42 @@ document.getElementById("btnMyListings").addEventListener("click", () => {
 // ============================================================
 document.getElementById("btnCreate").addEventListener("click", () => showView("create"));
 
+// ============================================================
+// Hudud / Shahar-tuman (bog'liq dropdownlar)
+// ============================================================
+let REGIONS_DATA = {};
+const regionSelect = document.getElementById("cRegion");
+const districtSelect = document.getElementById("cDistrict");
+
+function resetDistrictSelect() {
+  districtSelect.innerHTML = '<option value="">Avval hududni tanlang</option>';
+  districtSelect.disabled = true;
+}
+
+api("/api/regions")
+  .then((data) => {
+    REGIONS_DATA = data;
+    Object.keys(REGIONS_DATA).forEach((region) => {
+      const opt = document.createElement("option");
+      opt.value = region;
+      opt.textContent = region;
+      regionSelect.appendChild(opt);
+    });
+  })
+  .catch(() => {});
+
+regionSelect.addEventListener("change", () => {
+  const districts = REGIONS_DATA[regionSelect.value] || [];
+  if (!districts.length) {
+    resetDistrictSelect();
+    return;
+  }
+  districtSelect.disabled = false;
+  districtSelect.innerHTML =
+    '<option value="">Tanlang</option>' +
+    districts.map((d) => `<option value="${d}">${d}</option>`).join("");
+});
+
 // Foydalanuvchi kiritayotgan raqamni minglik bo'laklarga ajratib ko'rsatadi
 // (masalan "5287400" -> "5 287 400"), shu bilan birga kursor pozitsiyasini saqlaydi.
 function attachThousandsFormatter(input) {
@@ -308,6 +345,7 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     transmission: fd.get("transmission") || null,
     fuel_type: fd.get("fuel_type") || null,
     region: fd.get("region") || null,
+    district: fd.get("district") || null,
     description: fd.get("description") || null,
     contact_phone: fd.get("contact_phone") || null,
   };
@@ -344,6 +382,7 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
       showToast("E'lon yuborildi! Admin tasdiqlagach ro'yxatda ko'rinadi.");
     }
     form.reset();
+    resetDistrictSelect();
     showView("my");
     loadMyListings();
   } catch (e) {

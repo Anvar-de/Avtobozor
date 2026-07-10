@@ -34,6 +34,7 @@ class ListingCreate(BaseModel):
     transmission: Optional[str] = Field(None, max_length=30)
     fuel_type: Optional[str] = Field(None, max_length=30)
     region: Optional[str] = Field(None, max_length=50)
+    district: Optional[str] = Field(None, max_length=50)
     description: Optional[str] = Field(None, max_length=300)
     contact_phone: Optional[str] = Field(None, max_length=20)
 
@@ -54,6 +55,7 @@ class ListingUpdate(BaseModel):
     transmission: Optional[str] = Field(None, max_length=30)
     fuel_type: Optional[str] = Field(None, max_length=30)
     region: Optional[str] = Field(None, max_length=50)
+    district: Optional[str] = Field(None, max_length=50)
     description: Optional[str] = Field(None, max_length=300)
     contact_phone: Optional[str] = Field(None, max_length=20)
     status: Optional[ListingStatus] = None
@@ -70,6 +72,7 @@ class ListingOut(BaseModel):
     transmission: Optional[str] = None
     fuel_type: Optional[str] = None
     region: Optional[str] = None
+    district: Optional[str] = None
     description: Optional[str] = None
     contact_phone: Optional[str] = None
     status: ListingStatus

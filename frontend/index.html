@@ -92,7 +92,18 @@
           </select>
         </label>
       </div>
-      <label>Hudud<input name="region" type="text" placeholder="Samarqand" /></label>
+      <div class="form-row">
+        <label>Hudud
+          <select name="region" id="cRegion">
+            <option value="">Tanlang</option>
+          </select>
+        </label>
+        <label>Shahar yoki tuman
+          <select name="district" id="cDistrict" disabled>
+            <option value="">Avval hududni tanlang</option>
+          </select>
+        </label>
+      </div>
       <label>Tavsif<textarea name="description" rows="4" maxlength="300" placeholder="Avtomobil holati haqida qo'shimcha ma'lumot"></textarea></label>
       <label>Aloqa uchun telefon<input name="contact_phone" type="tel" placeholder="+998 90 123 45 67" /></label>
       <label>Rasmlar (ko'pi bilan 4 ta)<input id="photoInput" type="file" accept="image/*" multiple /></label>
@@ -108,6 +119,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/app.js?v=8"></script>
+<script src="js/app.js?v=9"></script>
 </body>
 </html>

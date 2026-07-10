@@ -13,7 +13,7 @@ from aiogram.types import Update
 from sqlalchemy import inspect, text
 
 from shared.database import Base, engine
-from .routers import auth, listings
+from .routers import auth, listings, meta
 from .telegram_bot import bot, dp, setup_menu_button, resolve_bot_username
 
 # Jadvallarni yaratish (production'da Alembic migratsiya ishlatish tavsiya etiladi)
@@ -28,6 +28,9 @@ if "listings" in _inspector.get_table_names():
     if "views_count" not in _existing_columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE listings ADD COLUMN views_count INTEGER NOT NULL DEFAULT 0"))
+    if "district" not in _existing_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE listings ADD COLUMN district VARCHAR"))
 
 app = FastAPI(title="Avto E'lonlar Mini App API")
 
@@ -44,6 +47,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.include_router(auth.router)
 app.include_router(listings.router)
+app.include_router(meta.router)
 
 
 @app.get("/api/health")
