@@ -39,7 +39,7 @@ class Listing(Base):
     brand = Column(String, nullable=False)          # Chevrolet, Nexia...
     model = Column(String, nullable=False)           # Cobalt, Malibu...
     year = Column(Integer, nullable=False)
-    price = Column(Float, nullable=False)            # so'mda
+    price = Column(Float, nullable=False)            # dollarda ($)
     mileage = Column(Integer, nullable=False)         # km
     transmission = Column(String, nullable=True)      # avtomat / mexanika
     fuel_type = Column(String, nullable=True)         # benzin / gaz / dizel / gibrid

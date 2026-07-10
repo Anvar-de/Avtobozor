@@ -177,7 +177,7 @@ async def post_to_channel(listing: Listing):
     caption_lines = [
         f"🚗 <b>{listing.brand} {listing.model}</b>, {listing.year}",
         "",
-        f"💰 <b>{listing.price:,.0f}</b> so'm".replace(",", " "),
+        f"💰 <b>${listing.price:,.0f}</b>",
         f"🛣 {listing.mileage:,} km".replace(",", " "),
     ]
     if listing.transmission:

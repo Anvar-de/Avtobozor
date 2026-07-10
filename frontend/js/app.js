@@ -48,7 +48,7 @@ async function api(path, { method = "GET", body, isForm = false } = {}) {
 // Yordamchi funksiyalar
 // ============================================================
 function formatPrice(n) {
-  return new Intl.NumberFormat("uz-UZ").format(n) + " so'm";
+  return "$" + new Intl.NumberFormat("en-US").format(n);
 }
 function formatKm(n) {
   return new Intl.NumberFormat("uz-UZ").format(n) + " km";

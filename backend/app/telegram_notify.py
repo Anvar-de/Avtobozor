@@ -37,7 +37,7 @@ async def notify_admin_new_listing(listing) -> None:
     lines = [
         f"🚗 Yangi e'lon: #{listing.id}",
         f"{_e(listing.brand)} {_e(listing.model)}, {listing.year}",
-        f"Narxi: {listing.price:,.0f} so'm",
+        f"Narxi: ${listing.price:,.0f}",
         f"Probeg: {listing.mileage:,} km",
         f"Hudud: {_e(listing.region) or '-'}",
         owner_line,
