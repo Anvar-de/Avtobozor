@@ -336,6 +336,12 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     return;
   }
 
+  const submitBtn = form.querySelector(".submit-btn");
+  const submitLabel = submitBtn.querySelector(".submit-btn__label");
+  submitBtn.disabled = true;
+  submitBtn.classList.add("submit-btn--loading");
+  submitLabel.textContent = "Yuborilmoqda...";
+
   const payload = {
     brand: fd.get("brand"),
     model: fd.get("model"),
@@ -387,6 +393,10 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     loadMyListings();
   } catch (e) {
     showToast(e.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove("submit-btn--loading");
+    submitLabel.textContent = "E'lonni joylash";
   }
 });
 

@@ -385,6 +385,10 @@ input[type="number"]::-webkit-inner-spin-button {
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-width: 0; }
 .form-row > label { min-width: 0; }
 .submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--accent);
   color: var(--accent-ink);
   border: none;
@@ -393,6 +397,26 @@ input[type="number"]::-webkit-inner-spin-button {
   font-weight: 700;
   font-size: 15px;
   margin-top: 6px;
+}
+.submit-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+.submit-btn__spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: submit-spin 0.7s linear infinite;
+}
+.submit-btn--loading .submit-btn__spinner {
+  display: inline-block;
+}
+@keyframes submit-spin {
+  to { transform: rotate(360deg); }
 }
 .form-hint {
   text-align: center;

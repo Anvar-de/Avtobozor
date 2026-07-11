@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=7" />
+<link rel="stylesheet" href="css/style.css?v=8" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -107,7 +107,10 @@
       <label>Tavsif<textarea name="description" rows="4" maxlength="300" placeholder="Avtomobil holati haqida qo'shimcha ma'lumot"></textarea></label>
       <label>Aloqa uchun telefon<input name="contact_phone" type="tel" placeholder="+998 90 123 45 67" /></label>
       <label>Rasmlar (ko'pi bilan 4 ta)<input id="photoInput" type="file" accept="image/*" multiple /></label>
-      <button type="submit" class="submit-btn">E'lonni joylash</button>
+      <button type="submit" class="submit-btn">
+        <span class="submit-btn__spinner" aria-hidden="true"></span>
+        <span class="submit-btn__label">E'lonni joylash</span>
+      </button>
       <p class="form-hint">E'lon joylashdan oldin admin tomonidan ko'rib chiqiladi.</p>
     </form>
     <button class="fab fab--back" data-back="feed" aria-label="Ro'yxatga qaytish">←</button>
@@ -119,6 +122,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/app.js?v=10"></script>
+<script src="js/app.js?v=11"></script>
 </body>
 </html>
