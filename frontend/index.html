@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=13" />
+<link rel="stylesheet" href="css/style.css?v=14" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -44,14 +44,12 @@
 
   <!-- ============ DETAIL VIEW ============ -->
   <main class="view" id="view-detail" hidden>
-    <button class="back-btn" data-back="feed">← Ro'yxatga</button>
     <div id="detailContent"></div>
     <button class="fab fab--back" data-back="feed" aria-label="Ro'yxatga qaytish">←</button>
   </main>
 
   <!-- ============ MY LISTINGS VIEW ============ -->
   <main class="view" id="view-my" hidden>
-    <button class="back-btn" data-back="feed">← Ro'yxatga</button>
     <h2 class="section-title">Mening e'lonlarim</h2>
     <div class="listing-grid" id="myListingGrid"></div>
     <div class="empty-state" id="myEmpty" hidden>
@@ -62,7 +60,6 @@
 
   <!-- ============ CREATE VIEW ============ -->
   <main class="view" id="view-create" hidden>
-    <button class="back-btn" data-back="feed">← Ro'yxatga</button>
     <h2 class="section-title">Yangi e'lon</h2>
     <form id="createForm" class="form">
       <label>Marka *<input required name="brand" type="text" placeholder="Chevrolet" /></label>
