@@ -18,6 +18,35 @@ tg?.expand();
 // Lokal brauzerda (Telegramsiz) test qilish uchun zaxira initData
 const initData = tg?.initData || "user=%7B%22id%22%3A111111%2C%22first_name%22%3A%22Test%22%7D&hash=dev";
 
+// ============================================================
+// Kunduzgi / tungi rejim
+// ============================================================
+const THEME_KEY = "autosavdo-theme";
+
+function applyTheme(theme) {
+  if (theme === "light") {
+    document.documentElement.setAttribute("data-theme", "light");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+  // Telegram Mini App'ning o'z sarlavha/fon rangini ham moslashtiramiz —
+  // aks holda Telegram'ning tashqi paneli eski (tungi) rangda qolib ketardi.
+  try {
+    tg?.setHeaderColor(theme === "light" ? "#f4f6f9" : "#14161a");
+    tg?.setBackgroundColor(theme === "light" ? "#f4f6f9" : "#14161a");
+  } catch {
+    // Eski Telegram klient versiyalarida bu metodlar bo'lmasligi mumkin
+  }
+}
+
+applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+
+document.getElementById("btnTheme").addEventListener("click", () => {
+  const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+
 async function api(path, { method = "GET", body, isForm = false } = {}) {
   const headers = { "X-Telegram-Init-Data": initData };
   if (!isForm && body) headers["Content-Type"] = "application/json";

@@ -1,4 +1,5 @@
 :root {
+  /* Tungi rejim (standart) */
   --bg: #14161a;
   --surface: #1d2025;
   --surface-2: #22262c;
@@ -18,6 +19,21 @@
 
   --radius: 14px;
   --topbar-h: 72px;
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6f9;
+  --surface: #ffffff;      /* kartalar va inputlar oq */
+  --surface-2: #e8ecf1;
+  --border: #dbe1e8;
+  --text: #14161a;
+  --text-muted: #667085;
+  --accent: #0364c3;
+  --accent-bright-rgb: 3, 100, 195;
+  --accent-ink: #ffffff;
+  --danger: #c73e1d;
+  --success: #2f9e57;
+  --pending: #667085;
 }
 
 * { box-sizing: border-box; }
@@ -59,9 +75,10 @@ button, input, select, textarea {
   top: 0;
   z-index: 10;
   height: var(--topbar-h);
-  display: flex;
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 16px 18px;
   background: var(--bg);
 }
@@ -72,6 +89,7 @@ button, input, select, textarea {
   font-size: 20px;
   letter-spacing: 0.02em;
   color: var(--text);
+  text-align: center;
 }
 .topbar__title span { color: var(--accent); }
 
@@ -87,6 +105,10 @@ button, input, select, textarea {
   justify-content: center;
 }
 .icon-btn:active { background: var(--surface-2); }
+
+.theme-toggle svg { display: none; }
+:root:not([data-theme="light"]) .theme-toggle .icon-sun { display: block; }
+:root[data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
 /* ---------- Filters ---------- */
 .filters {
@@ -469,7 +491,7 @@ input[type="number"]::-webkit-inner-spin-button {
   border: none;
   font-size: 28px;
   font-weight: 600;
-  box-shadow: 0 8px 20px rgba(244, 196, 48, 0.35);
+  box-shadow: 0 8px 20px rgba(var(--accent-bright-rgb), 0.35);
   z-index: 20;
 }
 .fab:active { filter: brightness(0.92); }
