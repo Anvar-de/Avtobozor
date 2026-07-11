@@ -7,6 +7,11 @@ shu ro'yxatdan to'ldiriladi (frontend GET /api/regions orqali oladi).
 from typing import Optional
 
 REGIONS: dict[str, list[str]] = {
+    "Toshkent shahri": [
+        "Olmazor", "Bektemir", "Mirobod", "Mirzo Ulug'bek", "Sirg'ali",
+        "Uchtepa", "Chilonzor", "Shayxontohur", "Yunusobod", "Yakkasaroy",
+        "Yashnobod", "Yangihayot",
+    ],
     "Andijon viloyati": [
         "Oqoltin", "Oltinko'l", "Andijon", "Asaka", "Oxunboboyev", "Baliqchi",
         "Bo'z", "Buloqboshi", "Qorasuv", "Kuyganyor", "Qo'rg'ontepa", "Marhamat",
@@ -81,11 +86,6 @@ REGIONS: dict[str, list[str]] = {
         "Bog'ot", "Gurlan", "Qorovul", "Qo'shko'pir", "Pitnak", "Urganch",
         "Xazorasp", "Xonqa", "Xiva", "Cholish", "Shovot", "Yangiariq",
         "Tuproqqal'a", "Yangibozor",
-    ],
-    "Toshkent shahri": [
-        "Olmazor", "Bektemir", "Mirobod", "Mirzo Ulug'bek", "Sirg'ali",
-        "Uchtepa", "Chilonzor", "Shayxontohur", "Yunusobod", "Yakkasaroy",
-        "Yashnobod", "Yangihayot",
     ],
 }
 
