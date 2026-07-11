@@ -195,6 +195,8 @@ async def post_to_channel(listing: Listing):
     if listing.contact_phone:
         caption_lines.append("")
         caption_lines.append(f"📞 {listing.contact_phone}")
+    caption_lines.append("")
+    caption_lines.append("Barcha e'lonlarni ko'rish uchun pastdagi tugmani bosing 👇👇👇")
     caption = "\n".join(caption_lines)
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[
