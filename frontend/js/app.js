@@ -50,6 +50,11 @@ async function api(path, { method = "GET", body, isForm = false } = {}) {
 function formatPrice(n) {
   return "$" + new Intl.NumberFormat("en-US").format(n);
 }
+// Rasm manzili R2/CDN'dan to'liq URL ("https://...") yoki eski/lokal nisbiy
+// yo'l ("/uploads/...") bo'lishi mumkin — faqat ikkinchi holatda API_BASE qo'shiladi.
+function photoUrl(filePath) {
+  return /^https?:\/\//.test(filePath) ? filePath : `${API_BASE}${filePath}`;
+}
 function formatKm(n) {
   return new Intl.NumberFormat("uz-UZ").format(n) + " km";
 }
@@ -113,7 +118,7 @@ function renderCard(listing, { showStatus = false } = {}) {
   div.className = "card";
   div.dataset.listingId = listing.id;
   div.innerHTML = `
-    <div class="card__photo" style="${cover ? `background-image:url('${API_BASE}${cover.file_path}')` : ""}">
+    <div class="card__photo" style="${cover ? `background-image:url('${photoUrl(cover.file_path)}')` : ""}">
       ${cover ? "" : "Rasm yo'q"}
     </div>
     <div class="card__body">
@@ -183,7 +188,7 @@ async function openDetail(id) {
     });
 
     const gallery = l.photos?.length
-      ? `<div class="detail-gallery">${l.photos.map((p) => `<img src="${API_BASE}${p.file_path}" />`).join("")}</div>`
+      ? `<div class="detail-gallery">${l.photos.map((p) => `<img src="${photoUrl(p.file_path)}" />`).join("")}</div>`
       : `<div class="detail-gallery--empty">Rasm yo'q</div>`;
 
     content.innerHTML = `

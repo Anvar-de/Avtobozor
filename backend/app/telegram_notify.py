@@ -2,11 +2,12 @@ import html
 import logging
 import os
 
-from aiogram.types import BufferedInputFile, FSInputFile, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup
 
 from shared.regions import format_location
+from shared.storage import resolve_url
 
-from .telegram_bot import UPLOAD_DIR, _build_collage, bot
+from .telegram_bot import MINI_APP_URL, _build_collage, bot
 
 logger = logging.getLogger("telegram_notify")
 
@@ -53,23 +54,19 @@ async def notify_admin_new_listing(listing) -> None:
         InlineKeyboardButton(text="❌ Rad etish", callback_data=f"reject:{listing.id}"),
     ]])
 
-    # telegram_bot.py'dagi kanal-post oqimi bilan bir xil: rasmlarni HTTP
-    # orqali emas, to'g'ridan-to'g'ri diskdan o'qiymiz (tezroq va ishonchli).
-    photo_file_paths = [
-        os.path.join(UPLOAD_DIR, os.path.basename(p.file_path)) for p in listing.photos
-    ]
+    photo_urls = [resolve_url(p.file_path, MINI_APP_URL) for p in listing.photos]
 
     try:
-        if len(photo_file_paths) == 1:
+        if len(photo_urls) == 1:
             await bot.send_photo(
                 chat_id=ADMIN_CHAT_ID,
-                photo=FSInputFile(photo_file_paths[0]),
+                photo=photo_urls[0],
                 caption=text,
                 parse_mode="HTML",
                 reply_markup=keyboard,
             )
-        elif len(photo_file_paths) > 1:
-            collage_bytes = await _build_collage(photo_file_paths)
+        elif len(photo_urls) > 1:
+            collage_bytes = await _build_collage(photo_urls)
             if collage_bytes is not None:
                 await bot.send_photo(
                     chat_id=ADMIN_CHAT_ID,

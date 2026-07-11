@@ -1,5 +1,4 @@
 import io
-import os
 import uuid
 from typing import Optional
 
@@ -11,6 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from shared.database import get_db
 from shared.models import Listing, Photo, ListingStatus
+from shared.storage import save_photo
 from ..telegram_auth import get_telegram_user
 from ..telegram_notify import notify_admin_new_listing
 from ..schemas import ListingCreate, ListingUpdate, ListingOut
@@ -20,8 +20,6 @@ register_heif_opener()
 
 router = APIRouter(prefix="/api/listings", tags=["listings"])
 
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 # Kengaytma shu xaritadan olinadi (foydalanuvchi yuborgan fayl nomidan emas) —
 # aks holda hujumchi ".jpg" rasm sifatida ".svg"/".html" fayl yuklab, XSS qilishi mumkin edi.
 # Kengaytma brauzer yuborgan Content-Type'dan emas, Pillow aniqlagan HAQIQIY
@@ -192,13 +190,10 @@ async def upload_photo(
 
     ext = ALLOWED_IMAGE_FORMATS[fmt]
     filename = f"{uuid.uuid4().hex}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-
-    with open(filepath, "wb") as f:
-        f.write(contents)
+    file_path = save_photo(contents, filename)
 
     position = len(listing.photos)
-    photo = Photo(listing_id=listing.id, file_path=f"/uploads/{filename}", position=position)
+    photo = Photo(listing_id=listing.id, file_path=file_path, position=position)
     db.add(photo)
     db.commit()
     db.refresh(listing)

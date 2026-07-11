@@ -7,8 +7,8 @@ import asyncio
 import io
 import logging
 import os
-from urllib.parse import urljoin
 
+import httpx
 from PIL import Image, ImageOps
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
@@ -21,6 +21,7 @@ from aiogram.types import (
 from shared.database import SessionLocal
 from shared.models import Listing, ListingStatus, User
 from shared.regions import format_location
+from shared.storage import resolve_url
 
 logger = logging.getLogger("telegram_bot")
 
@@ -32,12 +33,6 @@ CHANNEL_ID = os.getenv("CHANNEL_ID", "").strip()
 # BotFather'da /newapp orqali yaratilgan Mini App short name (masalan "Autosavdo") —
 # kanal tugmasidan bitta bosishda to'g'ridan-to'g'ri Mini App ochilishi uchun kerak.
 MINI_APP_SHORT_NAME = os.getenv("MINI_APP_SHORT_NAME", "Autosavdo").strip()
-
-# backend/app/routers/listings.py bilan bir xil — rasm fayllari shu papkada
-# diskda saqlanadi. Kollaj uchun rasmlarni HTTP orqali (o'ziga-o'zi so'rov
-# yuborib) emas, to'g'ridan-to'g'ri shu papkadan o'qiymiz (tezroq va ishonchli,
-# Render kabi hostingda o'z-o'ziga tarmoq so'rovi sekin/beqaror bo'lishi mumkin).
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 
 # Kanal posti uchun bir nechta e'lon rasmidan yasaladigan kollaj sozlamalari.
 # Cheklovlar xotira/CPU'ni yeb ketadigan yoki osilib qoladigan holatlarning oldini olish uchun.
@@ -131,37 +126,35 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
     return buf.getvalue()
 
 
-def _read_photo_files(file_paths: list[str]) -> list[bytes]:
-    """Rasm fayllarini diskdan o'qiydi. Bu — sinxron (bloklovchi) I/O bo'lgani
-    uchun asyncio.to_thread orqali chaqiriladi."""
+async def _read_photo_urls(urls: list[str]) -> list[bytes]:
+    """Rasm baytlarini URL orqali (R2/CDN) yuklab oladi."""
     images_bytes: list[bytes] = []
-    for path in file_paths:
-        try:
-            with open(path, "rb") as f:
-                data = f.read()
-        except OSError:
-            logger.warning("Kollaj uchun fayl topilmadi: %s", path)
-            continue
-        if len(data) > COLLAGE_MAX_PHOTO_BYTES:
-            logger.warning("Kollaj uchun rasm hajmi chegaradan katta, o'tkazib yuborildi: %s", path)
-            continue
-        images_bytes.append(data)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        for url in urls:
+            try:
+                resp = await client.get(url)
+                resp.raise_for_status()
+                data = resp.content
+            except Exception:
+                logger.warning("Kollaj uchun rasmni yuklab bo'lmadi: %s", url, exc_info=True)
+                continue
+            if len(data) > COLLAGE_MAX_PHOTO_BYTES:
+                logger.warning("Kollaj uchun rasm hajmi chegaradan katta, o'tkazib yuborildi: %s", url)
+                continue
+            images_bytes.append(data)
     return images_bytes
 
 
-async def _build_collage(photo_file_paths: list[str]) -> bytes | None:
-    """Bizning o'zimiz saqlagan (avval yuklashda tekshirilgan) e'lon rasmlaridan
-    kollaj yasaydi. Rasmlar HTTP orqali emas, to'g'ridan-to'g'ri diskdan
-    o'qiladi — Render kabi hostingda bot o'z-o'ziga tarmoq so'rovi yuborishi
-    sekin/beqaror bo'lib, bir necha rasmdan keyin uzilib qolishi mumkin edi.
+async def _build_collage(photo_urls: list[str]) -> bytes | None:
+    """E'lon rasmlaridan (R2/CDN'dan yuklab olib) bitta kollaj yasaydi.
     Har qanday xatolikda None qaytaradi — chaqiruvchi tomon eski albom
     usuliga qaytishi kerak, shuning uchun bu yerda hech narsa ko'tarilmaydi."""
-    paths = photo_file_paths[:COLLAGE_MAX_PHOTOS]
-    images_bytes = await asyncio.to_thread(_read_photo_files, paths)
+    urls = photo_urls[:COLLAGE_MAX_PHOTOS]
+    images_bytes = await _read_photo_urls(urls)
 
-    if len(images_bytes) < len(paths):
+    if len(images_bytes) < len(urls):
         logger.warning(
-            "Kollaj uchun %d/%d rasm muvaffaqiyatli o'qildi", len(images_bytes), len(paths)
+            "Kollaj uchun %d/%d rasm muvaffaqiyatli yuklandi", len(images_bytes), len(urls)
         )
 
     if not images_bytes:
@@ -210,16 +203,7 @@ async def post_to_channel(listing: Listing):
     ]])
 
     try:
-        photo_urls = [
-            urljoin(MINI_APP_URL + "/", p.file_path.lstrip("/")) for p in listing.photos
-        ]
-        # Kollaj uchun rasmlarni HTTP orqali emas, to'g'ridan-to'g'ri diskdan
-        # o'qiymiz (pastdagi _build_collage'ga qarang) — shu sababli mahalliy
-        # fayl yo'llari ham kerak (photo_urls esa albom-fallback va yakka
-        # rasmli holatda Telegram serveri o'zi yuklab olishi uchun ishlatiladi).
-        photo_file_paths = [
-            os.path.join(UPLOAD_DIR, os.path.basename(p.file_path)) for p in listing.photos
-        ]
+        photo_urls = [resolve_url(p.file_path, MINI_APP_URL) for p in listing.photos]
 
         if len(photo_urls) == 1:
             await bot.send_photo(
@@ -234,7 +218,7 @@ async def post_to_channel(listing: Listing):
             # va tugma bitta xabarda ("yopishgan" holda) yuboriladi. Telegram
             # sendMediaGroup'ga tugma qo'shishga ruxsat bermaydi, shu sababli
             # bu usul o'sha cheklovni butunlay chetlab o'tadi.
-            collage_bytes = await _build_collage(photo_file_paths)
+            collage_bytes = await _build_collage(photo_urls)
             if collage_bytes is not None:
                 await bot.send_photo(
                     chat_id=CHANNEL_ID,
