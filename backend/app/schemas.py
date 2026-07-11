@@ -33,12 +33,12 @@ class ListingCreate(BaseModel):
     mileage: int = Field(..., ge=0, le=2_000_000, description="km, manfiy bo'lmasligi kerak")
     transmission: Optional[str] = Field(None, max_length=30)
     fuel_type: Optional[str] = Field(None, max_length=30)
-    region: Optional[str] = Field(None, max_length=50)
+    region: str = Field(..., min_length=1, max_length=50)
     district: Optional[str] = Field(None, max_length=50)
     description: Optional[str] = Field(None, max_length=300)
     contact_phone: Optional[str] = Field(None, max_length=20)
 
-    @field_validator("brand", "model")
+    @field_validator("brand", "model", "region")
     @classmethod
     def not_blank(cls, v: str) -> str:
         if not v.strip():
