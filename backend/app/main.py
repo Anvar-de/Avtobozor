@@ -4,6 +4,12 @@ import secrets
 from dotenv import load_dotenv
 load_dotenv()
 
+# Standart holatda Python'ning root logger darajasi WARNING — bu logger.info(...)
+# orqali yozilgan barcha xabarlarni (masalan telegram_bot.py'dagi diagnostika
+# loglarini) jimgina yashirib qo'yardi. INFO darajasini yoqib, ular ham
+# Render loglarida ko'rinadigan qilamiz.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+
 logger = logging.getLogger("main")
 
 from fastapi import FastAPI, Request, HTTPException

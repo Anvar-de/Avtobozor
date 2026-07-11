@@ -268,10 +268,16 @@ async def delete_channel_post(listing: Listing) -> None:
     ba'zilari (masalan qo'lda allaqachon o'chirilgan bo'lsa) muvaffaqiyatsiz
     bo'lsa ham, qolganlari o'chirilishga harakat qilinadi."""
     if bot is None or not CHANNEL_ID or not listing.channel_message_ids:
+        logger.info(
+            "Kanal posti o'chirilmadi — saqlangan message_id yo'q (listing_id=%s, "
+            "bot=%s, CHANNEL_ID=%s, channel_message_ids=%r)",
+            listing.id, bot is not None, bool(CHANNEL_ID), listing.channel_message_ids,
+        )
         return
     for id_str in listing.channel_message_ids.split(","):
         try:
             await bot.delete_message(chat_id=CHANNEL_ID, message_id=int(id_str))
+            logger.info("Kanal posti o'chirildi (listing_id=%s, message_id=%s)", listing.id, id_str)
         except Exception:
             logger.warning(
                 "Kanaldan postni o'chirib bo'lmadi (listing_id=%s, message_id=%s)",
@@ -385,5 +391,15 @@ async def moderation_handler(callback: CallbackQuery):
             if message_ids:
                 listing.channel_message_ids = ",".join(str(i) for i in message_ids)
                 db.commit()
+                logger.info(
+                    "Kanal post ID saqlandi (listing_id=%s, message_ids=%s)",
+                    listing.id, listing.channel_message_ids,
+                )
+            else:
+                logger.warning(
+                    "post_to_channel hech qanday message_id qaytarmadi (listing_id=%s) — "
+                    "kanalga joylash muvaffaqiyatsiz bo'lgan bo'lishi mumkin",
+                    listing.id,
+                )
     finally:
         db.close()
