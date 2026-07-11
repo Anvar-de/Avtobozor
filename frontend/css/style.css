@@ -6,6 +6,7 @@
   --text: #f2f1ed;
   --text-muted: #8b9099;
   --accent: #f4c430;       /* headlight yellow */
+  --accent-bright-rgb: 255, 214, 64; /* tugma foni uchun: 75% shaffoflikni qoplash uchun asl sariqdan yorqinroq */
   --accent-ink: #14161a;
   --danger: #e4572e;       /* taillight red */
   --success: #4caf6d;
@@ -111,7 +112,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 .chip-btn {
   grid-column: 1 / -1;
-  background: var(--accent);
+  background: rgba(var(--accent-bright-rgb), 0.75);
   color: var(--accent-ink);
   border: none;
   border-radius: 10px;
@@ -338,7 +339,7 @@ input[type="number"]::-webkit-inner-spin-button {
   display: block;
   width: 100%;
   text-align: center;
-  background: var(--accent);
+  background: rgba(var(--accent-bright-rgb), 0.75);
   color: var(--accent-ink);
   border: none;
   border-radius: 12px;
@@ -389,7 +390,7 @@ input[type="number"]::-webkit-inner-spin-button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--accent);
+  background: rgba(var(--accent-bright-rgb), 0.75);
   color: var(--accent-ink);
   border: none;
   border-radius: 12px;
@@ -435,7 +436,7 @@ input[type="number"]::-webkit-inner-spin-button {
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: var(--accent);
+  background: rgba(var(--accent-bright-rgb), 0.75);
   color: var(--accent-ink);
   border: none;
   font-size: 28px;
