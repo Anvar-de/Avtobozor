@@ -63,7 +63,7 @@ button, input, select, textarea {
   align-items: center;
   justify-content: space-between;
   padding: 16px 18px;
-  background: linear-gradient(180deg, var(--bg) 70%, transparent);
+  background: var(--bg);
 }
 
 .topbar__title {
