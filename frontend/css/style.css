@@ -22,6 +22,10 @@
 
 * { box-sizing: border-box; }
 
+html {
+  overflow-x: hidden; /* sahifa hech qachon yon tomonga siljimasin */
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -30,7 +34,6 @@ html, body {
   font-family: var(--font-body);
   -webkit-tap-highlight-color: transparent;
   max-width: 100%;
-  overflow-x: hidden; /* sahifa hech qachon yon tomonga siljimasin */
 }
 
 body {
@@ -48,7 +51,6 @@ button, input, select, textarea {
   margin: 0 auto;
   padding-bottom: 90px;
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 /* ---------- Topbar ---------- */
