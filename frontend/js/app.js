@@ -310,6 +310,89 @@ regionSelect.addEventListener("change", () => {
     districts.map((d) => `<option value="${d}">${d}</option>`).join("");
 });
 
+// ============================================================
+// Marka (live search)
+// ============================================================
+let CAR_BRANDS_DATA = [];
+const brandInput = document.getElementById("cBrand");
+const brandList = document.getElementById("cBrandList");
+let brandActiveIndex = -1;
+
+api("/api/car-brands")
+  .then((data) => {
+    CAR_BRANDS_DATA = data;
+  })
+  .catch(() => {});
+
+function hideBrandList() {
+  brandList.hidden = true;
+  brandList.innerHTML = "";
+  brandActiveIndex = -1;
+}
+
+function renderBrandList(matches) {
+  brandActiveIndex = -1;
+  if (!matches.length) {
+    hideBrandList();
+    return;
+  }
+  brandList.innerHTML = matches
+    .map((name) => `<li data-value="${name}">${name}</li>`)
+    .join("");
+  brandList.hidden = false;
+}
+
+function updateBrandActive(items) {
+  items.forEach((li, i) => li.classList.toggle("active", i === brandActiveIndex));
+  items[brandActiveIndex]?.scrollIntoView({ block: "nearest" });
+}
+
+brandInput.addEventListener("input", () => {
+  const query = brandInput.value.trim().toLowerCase();
+  if (!query) {
+    hideBrandList();
+    return;
+  }
+  const startsWith = CAR_BRANDS_DATA.filter((b) => b.toLowerCase().startsWith(query));
+  const contains = CAR_BRANDS_DATA.filter(
+    (b) => !b.toLowerCase().startsWith(query) && b.toLowerCase().includes(query)
+  );
+  renderBrandList([...startsWith, ...contains].slice(0, 8));
+});
+
+brandList.addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-value]");
+  if (!li) return;
+  brandInput.value = li.dataset.value;
+  hideBrandList();
+});
+
+brandInput.addEventListener("keydown", (e) => {
+  if (brandList.hidden) return;
+  const items = [...brandList.querySelectorAll("li")];
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    brandActiveIndex = Math.min(brandActiveIndex + 1, items.length - 1);
+    updateBrandActive(items);
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    brandActiveIndex = Math.max(brandActiveIndex - 1, 0);
+    updateBrandActive(items);
+  } else if (e.key === "Enter") {
+    if (brandActiveIndex >= 0 && items[brandActiveIndex]) {
+      e.preventDefault();
+      brandInput.value = items[brandActiveIndex].dataset.value;
+      hideBrandList();
+    }
+  } else if (e.key === "Escape") {
+    hideBrandList();
+  }
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".autocomplete")) hideBrandList();
+});
+
 // Foydalanuvchi kiritayotgan raqamni minglik bo'laklarga ajratib ko'rsatadi
 // (masalan "5287400" -> "5 287 400"), shu bilan birga kursor pozitsiyasini saqlaydi.
 function attachThousandsFormatter(input) {
@@ -394,6 +477,7 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     }
     form.reset();
     resetDistrictSelect();
+    hideBrandList();
     showView("my");
     loadMyListings();
   } catch (e) {

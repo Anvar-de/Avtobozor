@@ -385,6 +385,34 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-width: 0; }
 .form-row > label { min-width: 0; }
+
+.autocomplete { position: relative; }
+.autocomplete__list {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.autocomplete__list li {
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+.autocomplete__list li.active,
+.autocomplete__list li:active {
+  background: var(--surface);
+}
 .submit-btn {
   display: flex;
   align-items: center;

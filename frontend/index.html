@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=14" />
+<link rel="stylesheet" href="css/style.css?v=15" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -62,7 +62,10 @@
   <main class="view" id="view-create" hidden>
     <h2 class="section-title">Yangi e'lon</h2>
     <form id="createForm" class="form">
-      <label>Marka *<input required name="brand" type="text" placeholder="Chevrolet" /></label>
+      <div class="autocomplete">
+        <label>Marka *<input required name="brand" id="cBrand" type="text" placeholder="Chevrolet" autocomplete="off" /></label>
+        <ul class="autocomplete__list" id="cBrandList" hidden></ul>
+      </div>
       <label>Model *<input required name="model" type="text" placeholder="Cobalt" /></label>
       <div class="form-row">
         <label>Yili *<input required name="year" type="number" min="1970" max="2027" placeholder="2021" /></label>
@@ -119,6 +122,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/app.js?v=12"></script>
+<script src="js/app.js?v=13"></script>
 </body>
 </html>
