@@ -50,6 +50,10 @@ class Listing(Base):
 
     status = Column(Enum(ListingStatus), default=ListingStatus.pending, nullable=False)
     views_count = Column(Integer, default=0, nullable=False)
+    # Kanalga joylangan post(lar)ning xabar ID'lari, vergul bilan ajratilgan
+    # (masalan albom + alohida tugmali xabar bo'lsa bir nechta bo'ladi) —
+    # e'lon o'chirilganda kanaldagi postni ham o'chirish uchun kerak.
+    channel_message_ids = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -31,6 +31,9 @@ if "listings" in _inspector.get_table_names():
     if "district" not in _existing_columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE listings ADD COLUMN district VARCHAR"))
+    if "channel_message_ids" not in _existing_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE listings ADD COLUMN channel_message_ids VARCHAR"))
 
 app = FastAPI(title="Avto E'lonlar Mini App API")
 

@@ -12,6 +12,7 @@ from shared.database import get_db
 from shared.models import Listing, Photo, ListingStatus
 from shared.storage import save_photo
 from ..telegram_auth import get_telegram_user
+from ..telegram_bot import delete_channel_post
 from ..telegram_notify import notify_admin_new_listing
 from ..schemas import ListingCreate, ListingUpdate, ListingOut
 from .auth import get_or_create_user
@@ -253,7 +254,7 @@ def update_listing(
 
 
 @router.delete("/{listing_id}")
-def delete_listing(
+async def delete_listing(
     listing_id: int,
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
@@ -265,6 +266,7 @@ def delete_listing(
     if listing.user_id != user.id:
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
 
+    await delete_channel_post(listing)
     db.delete(listing)
     db.commit()
     return {"ok": True}

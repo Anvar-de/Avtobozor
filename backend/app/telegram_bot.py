@@ -163,10 +163,13 @@ async def _build_collage(photo_urls: list[str]) -> bytes | None:
     return await asyncio.to_thread(_assemble_collage, images_bytes)
 
 
-async def post_to_channel(listing: Listing):
-    """Tasdiqlangan e'lonni kanalga joylaydi (agar CHANNEL_ID sozlangan bo'lsa)."""
+async def post_to_channel(listing: Listing) -> list[int] | None:
+    """Tasdiqlangan e'lonni kanalga joylaydi (agar CHANNEL_ID sozlangan bo'lsa).
+    Muvaffaqiyatli bo'lsa, yuborilgan xabar(lar)ning ID ro'yxatini qaytaradi —
+    chaqiruvchi buni listing.channel_message_ids'ga saqlashi kerak, shunda
+    e'lon keyinchalik o'chirilganda kanaldagi post ham o'chirilishi mumkin."""
     if bot is None or not CHANNEL_ID:
-        return
+        return None
 
     caption_lines = [
         f"🚗 <b>{listing.brand} {listing.model}</b>, {listing.year}",
@@ -206,13 +209,14 @@ async def post_to_channel(listing: Listing):
         photo_urls = [resolve_url(p.file_path, MINI_APP_URL) for p in listing.photos]
 
         if len(photo_urls) == 1:
-            await bot.send_photo(
+            msg = await bot.send_photo(
                 chat_id=CHANNEL_ID,
                 photo=photo_urls[0],
                 caption=caption,
                 parse_mode="HTML",
                 reply_markup=keyboard,
             )
+            return [msg.message_id]
         elif len(photo_urls) > 1:
             # Bir nechta rasmni bitta kollajga birlashtiramiz — shunda caption
             # va tugma bitta xabarda ("yopishgan" holda) yuboriladi. Telegram
@@ -220,13 +224,14 @@ async def post_to_channel(listing: Listing):
             # bu usul o'sha cheklovni butunlay chetlab o'tadi.
             collage_bytes = await _build_collage(photo_urls)
             if collage_bytes is not None:
-                await bot.send_photo(
+                msg = await bot.send_photo(
                     chat_id=CHANNEL_ID,
                     photo=BufferedInputFile(collage_bytes, filename="collage.jpg"),
                     caption=caption,
                     parse_mode="HTML",
                     reply_markup=keyboard,
                 )
+                return [msg.message_id]
             else:
                 # Kollaj yasab bo'lmadi (masalan rasmlarni yuklab olishda
                 # xatolik) — eski albom + alohida tugmali xabar usuliga qaytamiz.
@@ -234,24 +239,44 @@ async def post_to_channel(listing: Listing):
                     InputMediaPhoto(media=url, caption=caption if i == 0 else None, parse_mode="HTML")
                     for i, url in enumerate(photo_urls[:10])  # Telegram albomda maksimal 10 ta rasm
                 ]
-                await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
-                await bot.send_message(
+                album_messages = await bot.send_media_group(chat_id=CHANNEL_ID, media=media)
+                btn_message = await bot.send_message(
                     chat_id=CHANNEL_ID,
                     text="Avtosavdocom",
                     reply_markup=keyboard,
                 )
+                return [m.message_id for m in album_messages] + [btn_message.message_id]
         else:
-            await bot.send_message(
+            msg = await bot.send_message(
                 chat_id=CHANNEL_ID,
                 text=caption,
                 parse_mode="HTML",
                 reply_markup=keyboard,
             )
+            return [msg.message_id]
     except Exception:
         # Kanalga joylash ishlamay qolsa ham (masalan bot hali admin qilinmagan
         # bo'lsa), asosiy oqim (tasdiqlash) buzilmasligi kerak — shuning uchun
         # xatoni yutib, faqat logga yozamiz.
         logger.exception("Kanalga joylashda xatolik (CHANNEL_ID=%s)", CHANNEL_ID)
+        return None
+
+
+async def delete_channel_post(listing: Listing) -> None:
+    """E'lon o'chirilganda, agar u avval kanalga joylangan bo'lsa, o'sha
+    post(lar)ni kanaldan ham o'chiradi. Har bir xabar alohida o'chiriladi —
+    ba'zilari (masalan qo'lda allaqachon o'chirilgan bo'lsa) muvaffaqiyatsiz
+    bo'lsa ham, qolganlari o'chirilishga harakat qilinadi."""
+    if bot is None or not CHANNEL_ID or not listing.channel_message_ids:
+        return
+    for id_str in listing.channel_message_ids.split(","):
+        try:
+            await bot.delete_message(chat_id=CHANNEL_ID, message_id=int(id_str))
+        except Exception:
+            logger.warning(
+                "Kanaldan postni o'chirib bo'lmadi (listing_id=%s, message_id=%s)",
+                listing.id, id_str, exc_info=True,
+            )
 
 
 @dp.message(CommandStart())
@@ -356,6 +381,9 @@ async def moderation_handler(callback: CallbackQuery):
                 pass
 
         if action == "approve":
-            await post_to_channel(listing)
+            message_ids = await post_to_channel(listing)
+            if message_ids:
+                listing.channel_message_ids = ",".join(str(i) for i in message_ids)
+                db.commit()
     finally:
         db.close()
