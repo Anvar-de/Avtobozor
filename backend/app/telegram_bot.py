@@ -20,6 +20,7 @@ from aiogram.types import (
 
 from shared.database import SessionLocal
 from shared.models import Listing, ListingStatus, User
+from shared.regions import format_location
 
 logger = logging.getLogger("telegram_bot")
 
@@ -184,8 +185,9 @@ async def post_to_channel(listing: Listing):
         caption_lines.append(f"⚙️ {listing.transmission}")
     if listing.fuel_type:
         caption_lines.append(f"⛽ {listing.fuel_type}")
-    if listing.region:
-        caption_lines.append(f"📍 {listing.region}")
+    location = format_location(listing.region, listing.district)
+    if location:
+        caption_lines.append(f"📍 {location}")
     if listing.description:
         desc = listing.description.strip()
         caption_lines.append("")

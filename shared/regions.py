@@ -4,6 +4,8 @@ E'lon yaratish formasidagi "Hudud" va "Shahar yoki tuman" dropdownlari
 shu ro'yxatdan to'ldiriladi (frontend GET /api/regions orqali oladi).
 """
 
+from typing import Optional
+
 REGIONS: dict[str, list[str]] = {
     "Andijon viloyati": [
         "Oqoltin", "Oltinko'l", "Andijon", "Asaka", "Oxunboboyev", "Baliqchi",
@@ -86,3 +88,11 @@ REGIONS: dict[str, list[str]] = {
         "Yashnobod", "Yangihayot",
     ],
 }
+
+
+def format_location(region: Optional[str], district: Optional[str]) -> str:
+    """"Tuman/shahar, Hudud" ko'rinishidagi manzil satrini qaytaradi — "viloyati"
+    so'zisiz (masalan region="Andijon viloyati", district="Asaka" -> "Asaka, Andijon").
+    Admin xabari va telegram kanal postida shu ko'rinishda ko'rsatiladi."""
+    region_short = region.replace(" viloyati", "").strip() if region else None
+    return ", ".join(part for part in (district, region_short) if part)

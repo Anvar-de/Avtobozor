@@ -4,6 +4,8 @@ import os
 
 from aiogram.types import BufferedInputFile, FSInputFile, InlineKeyboardButton, InlineKeyboardMarkup
 
+from shared.regions import format_location
+
 from .telegram_bot import UPLOAD_DIR, _build_collage, bot
 
 logger = logging.getLogger("telegram_notify")
@@ -39,7 +41,7 @@ async def notify_admin_new_listing(listing) -> None:
         f"{_e(listing.brand)} {_e(listing.model)}, {listing.year}",
         f"Narxi: ${listing.price:,.0f}",
         f"Probeg: {listing.mileage:,} km",
-        f"Hudud: {_e(listing.region) or '-'}",
+        f"Manzil: {_e(format_location(listing.region, listing.district)) or '-'}",
         owner_line,
     ]
     if listing.description:
