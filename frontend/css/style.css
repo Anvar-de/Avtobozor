@@ -252,6 +252,23 @@ input[type="number"]::-webkit-inner-spin-button {
 .status-dot--rejected { color: var(--danger); }
 .status-dot--sold { color: var(--text-muted); }
 
+/* ---------- "Ko'proq ko'rsatish" tugmasi ---------- */
+.load-more-btn {
+  display: block;
+  margin: 4px 8px 0;
+  width: calc(100% - 16px);
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+.load-more-btn:active { filter: brightness(0.92); }
+.load-more-btn[hidden] { display: none; }
+
 /* ---------- Empty state ---------- */
 .empty-state {
   text-align: center;

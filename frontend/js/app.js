@@ -129,10 +129,14 @@ document.querySelectorAll("[data-back]").forEach((btn) => {
       await loadFeed();
       // showView yuqoriga scroll qilib qo'yadi — oxirgi ochilgan e'lon
       // hali ham ro'yxatda bo'lsa, foydalanuvchini o'sha kartaga qaytaramiz.
+      // Feed endi sahifalab (10 tadan) yuklangani uchun kerak bo'lsa, karta
+      // topilguncha keyingi sahifalarni ham yuklaymiz.
       if (lastOpenedListingId != null) {
-        document
-          .querySelector(`.card[data-listing-id="${lastOpenedListingId}"]`)
-          ?.scrollIntoView({ block: "center" });
+        const cardSelector = `.card[data-listing-id="${lastOpenedListingId}"]`;
+        while (!document.querySelector(cardSelector) && feedHasMore) {
+          await fetchFeedPage();
+        }
+        document.querySelector(cardSelector)?.scrollIntoView({ block: "center" });
       }
     }
   });
@@ -166,21 +170,45 @@ function renderCard(listing, { showStatus = false } = {}) {
 }
 
 // ============================================================
-// FEED
+// FEED (sahifalab, infinity scroll + "Ko'proq ko'rsatish" bilan)
 // ============================================================
-async function loadFeed() {
-  const grid = document.getElementById("listingGrid");
-  const empty = document.getElementById("feedEmpty");
-  grid.innerHTML = "";
+// Har safar 10 tadan yuklanadi. Ketma-ket 60 ta e'lon infinity scroll orqali
+// yuklangach, avtomatik yuklash to'xtaydi va "Ko'proq ko'rsatish" tugmasi
+// chiqadi — shunda server ortiqcha yuklanib ketmaydi. Tugma bosilganda
+// navbatdagi 10 tasi yuklanib, infinity scroll yana keyingi 60 tagacha davom etadi.
+const FEED_PAGE_SIZE = 10;
+const FEED_AUTO_LOAD_LIMIT = 60;
 
+let feedOffset = 0;
+let feedLoading = false;
+let feedHasMore = true;
+let feedSegmentCount = 0; // joriy davrda infinity scroll orqali yuklangan e'lonlar soni
+
+function feedParams() {
   const params = new URLSearchParams();
   const search = document.getElementById("fSearch").value.trim();
   if (search) params.set("search", search);
+  return params;
+}
+
+async function fetchFeedPage() {
+  if (feedLoading || !feedHasMore) return;
+  feedLoading = true;
+
+  const grid = document.getElementById("listingGrid");
+  const empty = document.getElementById("feedEmpty");
+  const loadMoreBtn = document.getElementById("btnLoadMore");
+
+  const params = feedParams();
+  const searchValue = params.get("search");
+  params.set("limit", FEED_PAGE_SIZE);
+  params.set("offset", feedOffset);
 
   try {
     const listings = await api(`/api/listings?${params.toString()}`);
-    if (!listings.length) {
-      empty.querySelector("p").innerHTML = params.toString()
+
+    if (feedOffset === 0 && !listings.length) {
+      empty.querySelector("p").innerHTML = searchValue
         ? "Siz kiritgan parametrlar bo'yicha e'lon topilmadi"
         : "Hozircha e'lon yo'q.<br/>Birinchi bo'lib joylang!";
       empty.hidden = false;
@@ -188,12 +216,46 @@ async function loadFeed() {
       empty.hidden = true;
       listings.forEach((l) => grid.appendChild(renderCard(l)));
     }
+
+    feedOffset += listings.length;
+    feedSegmentCount += listings.length;
+    if (listings.length < FEED_PAGE_SIZE) feedHasMore = false;
+
+    loadMoreBtn.hidden = !feedHasMore || feedSegmentCount < FEED_AUTO_LOAD_LIMIT;
   } catch (e) {
     showToast(e.message);
+  } finally {
+    feedLoading = false;
   }
 }
 
+async function loadFeed() {
+  feedOffset = 0;
+  feedHasMore = true;
+  feedSegmentCount = 0;
+  feedLoading = false;
+  document.getElementById("listingGrid").innerHTML = "";
+  document.getElementById("btnLoadMore").hidden = true;
+  await fetchFeedPage();
+}
+
 document.getElementById("btnFilter").addEventListener("click", loadFeed);
+
+document.getElementById("btnLoadMore").addEventListener("click", () => {
+  feedSegmentCount = 0;
+  document.getElementById("btnLoadMore").hidden = true;
+  fetchFeedPage();
+});
+
+// Ro'yxat oxiriga yaqinlashganda avtomatik keyingi sahifani yuklaydi — faqat
+// joriy 60 talik davr tugamagan va feed ko'rinishi ochiq bo'lsa.
+window.addEventListener("scroll", () => {
+  if (views.feed.hidden) return;
+  if (feedLoading || !feedHasMore) return;
+  if (feedSegmentCount >= FEED_AUTO_LOAD_LIMIT) return;
+  if (window.innerHeight + window.scrollY < document.body.offsetHeight - 300) return;
+  fetchFeedPage();
+});
 
 // ============================================================
 // DETAIL
