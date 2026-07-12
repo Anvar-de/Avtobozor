@@ -116,7 +116,9 @@ const views = {
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => (el.hidden = key !== name));
-  document.getElementById("btnCreate").hidden = name === "create";
+  // "create" va "my" sahifalarida pastki suzuvchi "E'lon berish" tugmasi
+  // yashiriladi — bu sahifalarda o'zining ichki tugmalar qatori bor.
+  document.getElementById("btnCreate").hidden = name === "create" || name === "my";
   window.scrollTo(0, 0);
 }
 
@@ -364,6 +366,7 @@ document.getElementById("btnMyListings").addEventListener("click", () => {
 // YANGI E'LON
 // ============================================================
 document.getElementById("btnCreate").addEventListener("click", () => showView("create"));
+document.getElementById("btnCreateFromMy").addEventListener("click", () => showView("create"));
 
 // ============================================================
 // Hudud / Shahar-tuman (bog'liq dropdownlar)
