@@ -476,6 +476,27 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--text-muted);
 }
 
+/* ---------- Pastki "E'lon berish" tugmasi (Qidirish tugmasi bilan bir xil uslub) ---------- */
+.bottom-btn {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 16px);
+  max-width: 464px; /* .app'ning max-width: 480px'idan 2x8px padding ayirilgan */
+  z-index: 15;
+  background: rgba(var(--accent-bright-rgb), 0.75);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 10px;
+  padding: 11px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+.bottom-btn:active { filter: brightness(0.92); }
+.bottom-btn[hidden] { display: none; }
+
 /* ---------- FAB ---------- */
 .fab {
   position: fixed;
@@ -499,6 +520,9 @@ input[type="number"]::-webkit-inner-spin-button {
 .fab[hidden] { display: none; }
 
 .fab--back {
+  /* Pastdagi "E'lon berish" paneli bilan ustma-ust tushmasligi uchun
+     odatdagi .fab'dan yuqoriroqqa ko'tarilgan. */
+  bottom: 84px;
   right: auto;
   left: 22px;
   font-size: 24px;
