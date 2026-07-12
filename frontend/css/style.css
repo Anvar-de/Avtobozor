@@ -520,37 +520,6 @@ input[type="number"]::-webkit-inner-spin-button {
 .bottom-btn:active { filter: brightness(0.92); }
 .bottom-btn[hidden] { display: none; }
 
-/* ---------- FAB ---------- */
-.fab {
-  position: fixed;
-  bottom: 22px;
-  right: 22px;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  background: rgba(var(--accent-bright-rgb), 0.75);
-  color: var(--accent-ink);
-  border: none;
-  font-size: 28px;
-  font-weight: 600;
-  box-shadow: 0 8px 20px rgba(var(--accent-bright-rgb), 0.35);
-  z-index: 20;
-}
-.fab:active { filter: brightness(0.92); }
-.fab[hidden] { display: none; }
-
-.fab--back {
-  /* Pastdagi "E'lon berish" paneli bilan ustma-ust tushmasligi uchun
-     odatdagi .fab'dan yuqoriroqqa ko'tarilgan. */
-  bottom: 84px;
-  right: auto;
-  left: 22px;
-  font-size: 24px;
-}
-
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;

@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=23" />
+<link rel="stylesheet" href="css/style.css?v=24" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -51,7 +51,10 @@
   <!-- ============ DETAIL VIEW ============ -->
   <main class="view" id="view-detail" hidden>
     <div id="detailContent"></div>
-    <button class="fab fab--back" data-back="feed" aria-label="Ro'yxatga qaytish">←</button>
+    <div class="submit-actions">
+      <button type="button" class="submit-btn" id="btnCreateFromDetail">E'lon berish</button>
+      <button type="button" class="submit-btn" data-back="feed">Orqaga qaytish</button>
+    </div>
   </main>
 
   <!-- ============ MY LISTINGS VIEW ============ -->
@@ -137,6 +140,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/app.js?v=16"></script>
+<script src="js/app.js?v=17"></script>
 </body>
 </html>

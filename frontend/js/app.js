@@ -116,9 +116,9 @@ const views = {
 
 function showView(name) {
   Object.entries(views).forEach(([key, el]) => (el.hidden = key !== name));
-  // "create" va "my" sahifalarida pastki suzuvchi "E'lon berish" tugmasi
-  // yashiriladi — bu sahifalarda o'zining ichki tugmalar qatori bor.
-  document.getElementById("btnCreate").hidden = name === "create" || name === "my";
+  // "create", "my" va "detail" sahifalarida pastki suzuvchi "E'lon berish"
+  // tugmasi yashiriladi — bu sahifalarda o'zining ichki tugmalar qatori bor.
+  document.getElementById("btnCreate").hidden = ["create", "my", "detail"].includes(name);
   window.scrollTo(0, 0);
 }
 
@@ -367,6 +367,7 @@ document.getElementById("btnMyListings").addEventListener("click", () => {
 // ============================================================
 document.getElementById("btnCreate").addEventListener("click", () => showView("create"));
 document.getElementById("btnCreateFromMy").addEventListener("click", () => showView("create"));
+document.getElementById("btnCreateFromDetail").addEventListener("click", () => showView("create"));
 
 // ============================================================
 // Hudud / Shahar-tuman (bog'liq dropdownlar)
