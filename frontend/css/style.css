@@ -438,10 +438,11 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 .submit-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 10px;
   margin-top: 6px;
 }
+.submit-actions .submit-btn { flex: 1; min-width: 0; }
 .submit-btn {
   display: flex;
   align-items: center;
