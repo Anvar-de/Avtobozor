@@ -65,7 +65,6 @@ button, input, select, textarea {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  padding-bottom: 90px;
   min-height: 100vh;
 }
 
@@ -290,10 +289,11 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 /* ---------- Detail view ---------- */
-/* Pastki padding suzuvchi (fixed) tugmalar (.fab, 56px + 22px bo'shliq)
-   ostida kontent (masalan Tavsif maydoni yoki egasining tugmalari)
-   yashirinib qolmasligi uchun kattalashtirilgan. */
-.view { padding: 6px 8px 100px; }
+.view { padding: 6px 8px 16px; }
+
+/* Feed'da pastki suzuvchi "E'lon berish" tugmasi ostida kontent
+   yashirinib qolmasligi uchun qo'shimcha bo'shliq. */
+#view-feed { padding-bottom: 100px; }
 
 .section-title {
   font-family: var(--font-display);
