@@ -292,7 +292,7 @@ async function openDetail(id) {
     });
 
     const gallery = l.photos?.length
-      ? `<div class="detail-gallery">${l.photos.map((p) => `<img src="${photoUrl(p.file_path)}" />`).join("")}</div>`
+      ? `<div class="detail-gallery">${l.photos.map((p, i) => `<img src="${photoUrl(p.file_path)}" data-index="${i}" />`).join("")}</div>`
       : `<div class="detail-gallery--empty">Rasm yo'q</div>`;
 
     content.innerHTML = `
@@ -321,6 +321,12 @@ async function openDetail(id) {
             `
       }
     `;
+
+    if (l.photos?.length) {
+      content.querySelectorAll(".detail-gallery img").forEach((img) => {
+        img.addEventListener("click", () => openLightbox(l.photos, Number(img.dataset.index)));
+      });
+    }
 
     if (isOwner) {
       document.getElementById("markSold")?.addEventListener("click", async () => {
@@ -355,6 +361,54 @@ async function openDetail(id) {
     content.innerHTML = `<p>Xatolik: ${e.message}</p>`;
   }
 }
+
+// ============================================================
+// LIGHTBOX (rasmni to'liq ekranda ko'rish)
+// ============================================================
+const lightboxEl = document.getElementById("lightbox");
+const lightboxImgEl = document.getElementById("lightboxImg");
+const lightboxPrevEl = document.getElementById("lightboxPrev");
+const lightboxNextEl = document.getElementById("lightboxNext");
+let lightboxPhotos = [];
+let lightboxIndex = 0;
+
+function renderLightbox() {
+  lightboxImgEl.src = photoUrl(lightboxPhotos[lightboxIndex].file_path);
+  const hasMultiple = lightboxPhotos.length > 1;
+  lightboxPrevEl.classList.toggle("lightbox__nav--hidden", !hasMultiple);
+  lightboxNextEl.classList.toggle("lightbox__nav--hidden", !hasMultiple);
+}
+
+function openLightbox(photos, index) {
+  lightboxPhotos = photos;
+  lightboxIndex = index;
+  renderLightbox();
+  lightboxEl.classList.add("lightbox--visible");
+}
+
+function closeLightbox() {
+  lightboxEl.classList.remove("lightbox--visible");
+}
+
+lightboxEl.addEventListener("click", (e) => {
+  if (e.target === lightboxEl) closeLightbox();
+});
+lightboxImgEl.addEventListener("click", closeLightbox);
+document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
+lightboxPrevEl.addEventListener("click", () => {
+  lightboxIndex = (lightboxIndex - 1 + lightboxPhotos.length) % lightboxPhotos.length;
+  renderLightbox();
+});
+lightboxNextEl.addEventListener("click", () => {
+  lightboxIndex = (lightboxIndex + 1) % lightboxPhotos.length;
+  renderLightbox();
+});
+document.addEventListener("keydown", (e) => {
+  if (!lightboxEl.classList.contains("lightbox--visible")) return;
+  if (e.key === "Escape") closeLightbox();
+  if (e.key === "ArrowLeft") lightboxPrevEl.click();
+  if (e.key === "ArrowRight") lightboxNextEl.click();
+});
 
 // ============================================================
 // MENING E'LONLARIM
