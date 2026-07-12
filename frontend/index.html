@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=16" />
+<link rel="stylesheet" href="css/style.css?v=17" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -66,16 +66,18 @@
   <main class="view" id="view-create" hidden>
     <h2 class="section-title">Yangi e'lon</h2>
     <form id="createForm" class="form">
-      <div class="autocomplete">
-        <label>Marka *<input required name="brand" id="cBrand" type="text" placeholder="Chevrolet" autocomplete="off" /></label>
-        <ul class="autocomplete__list" id="cBrandList" hidden></ul>
-      </div>
-      <label>Model *<input required name="model" type="text" placeholder="Cobalt" /></label>
       <div class="form-row">
+        <div class="autocomplete">
+          <label>Marka *<input required name="brand" id="cBrand" type="text" placeholder="Chevrolet" autocomplete="off" /></label>
+          <ul class="autocomplete__list" id="cBrandList" hidden></ul>
+        </div>
+        <label>Model *<input required name="model" type="text" placeholder="Cobalt" /></label>
+      </div>
+      <div class="form-row form-row--3">
         <label>Yili *<input required name="year" type="number" min="1970" max="2027" placeholder="2021" /></label>
         <label>Probeg, km *<input required name="mileage" id="cMileage" type="text" inputmode="numeric" autocomplete="off" placeholder="45 000" /></label>
+        <label>Narxi, $ *<input required name="price" id="cPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="12 000" /></label>
       </div>
-      <label>Narxi, $ *<input required name="price" id="cPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="12 000" /></label>
       <div class="form-row">
         <label>Uzatma
           <select name="transmission">
