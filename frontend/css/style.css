@@ -502,16 +502,16 @@ input[type="number"]::-webkit-inner-spin-button {
 /* ---------- Pastki "E'lon berish" tugmasi (Qidirish tugmasi bilan bir xil uslub) ---------- */
 .bottom-btn {
   position: fixed;
-  bottom: 16px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 16px);
   max-width: 464px; /* .app'ning max-width: 480px'idan 2x8px padding ayirilgan */
   z-index: 15;
-  background: rgba(var(--accent-bright-rgb), 0.75);
+  background: rgb(var(--accent-bright-rgb));
   color: var(--accent-ink);
   border: none;
-  border-radius: 10px;
+  border-radius: 10px 10px 0 0;
   padding: 11px;
   font-weight: 600;
   font-size: 14px;
