@@ -185,6 +185,12 @@ let feedOffset = 0;
 let feedLoading = false;
 let feedHasMore = true;
 let feedSegmentCount = 0; // joriy davrda infinity scroll orqali yuklangan e'lonlar soni
+// "Qidirish" tugmasi ketma-ket bir necha marta bosilsa, har bir bosish o'zining
+// fetchFeedPage() so'rovini yuboradi — eski so'rov hali javob kutayotgan bo'lishi
+// mumkin. Har bir loadFeed() chaqiruvida bu hisoblagich oshiriladi va oldingi
+// (eskirgan) so'rov javobi kelganda uni e'tiborsiz qoldirib, natijalar
+// takrorlanib qo'shilib ketishining (va offset noto'g'ri hisoblanishining) oldi olinadi.
+let feedRequestId = 0;
 
 function feedParams() {
   const params = new URLSearchParams();
@@ -196,6 +202,7 @@ function feedParams() {
 async function fetchFeedPage() {
   if (feedLoading || !feedHasMore) return;
   feedLoading = true;
+  const requestId = feedRequestId;
 
   const grid = document.getElementById("listingGrid");
   const empty = document.getElementById("feedEmpty");
@@ -208,6 +215,7 @@ async function fetchFeedPage() {
 
   try {
     const listings = await api(`/api/listings?${params.toString()}`);
+    if (requestId !== feedRequestId) return; // shu orada yangi qidiruv boshlangan — eskirgan javob
 
     if (feedOffset === 0 && !listings.length) {
       empty.querySelector("p").innerHTML = searchValue
@@ -225,13 +233,14 @@ async function fetchFeedPage() {
 
     loadMoreBtn.hidden = !feedHasMore || feedSegmentCount < FEED_AUTO_LOAD_LIMIT;
   } catch (e) {
-    showToast(e.message);
+    if (requestId === feedRequestId) showToast(e.message);
   } finally {
-    feedLoading = false;
+    if (requestId === feedRequestId) feedLoading = false;
   }
 }
 
 async function loadFeed() {
+  feedRequestId++;
   feedOffset = 0;
   feedHasMore = true;
   feedSegmentCount = 0;
