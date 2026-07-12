@@ -21,6 +21,7 @@ class UserOut(BaseModel):
     username: Optional[str] = None
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
+    is_admin: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

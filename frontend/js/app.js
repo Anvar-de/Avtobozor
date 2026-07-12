@@ -283,6 +283,8 @@ async function openDetail(id) {
     const l = await api(`/api/listings/${id}`);
     const me = await api("/api/auth/me", { method: "POST" });
     const isOwner = me.id === l.user_id;
+    // Admin egasi bo'lishidan qat'iy nazar istalgan e'lonni o'chira oladi.
+    const canDelete = isOwner || me.is_admin;
 
     // Kartalar ro'yxati qayta yuklanmasa ham, ko'rishlar sonini darhol yangilaymiz
     document.querySelectorAll(`.card[data-listing-id="${l.id}"] [data-views-count]`).forEach((el) => {
@@ -313,9 +315,10 @@ async function openDetail(id) {
                ${l.status !== "sold" ? `<button class="success" id="markSold">Sotildi deb belgilash</button>` : ""}
                <button class="danger" id="deleteListing">O'chirish</button>
              </div>`
-          : l.contact_phone
-          ? `<a class="contact-btn" href="tel:${l.contact_phone}">📞 Sotuvchiga qo'ng'iroq qilish</a>`
-          : ""
+          : `
+             ${l.contact_phone ? `<a class="contact-btn" href="tel:${l.contact_phone}">📞 Sotuvchiga qo'ng'iroq qilish</a>` : ""}
+             ${me.is_admin ? `<div class="owner-actions"><button class="danger" id="deleteListing">O'chirish (admin)</button></div>` : ""}
+            `
       }
     `;
 
@@ -329,13 +332,20 @@ async function openDetail(id) {
           showToast(e.message);
         }
       });
+    }
+    if (canDelete) {
       document.getElementById("deleteListing")?.addEventListener("click", async () => {
         if (!confirm("E'lonni o'chirishga ishonchingiz komilmi?")) return;
         try {
           await api(`/api/listings/${id}`, { method: "DELETE" });
           showToast("E'lon o'chirildi");
-          showView("my");
-          loadMyListings();
+          if (isOwner) {
+            showView("my");
+            loadMyListings();
+          } else {
+            showView("feed");
+            loadFeed();
+          }
         } catch (e) {
           showToast(e.message);
         }

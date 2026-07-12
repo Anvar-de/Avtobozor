@@ -15,7 +15,7 @@ from ..telegram_auth import get_telegram_user
 from ..telegram_bot import delete_channel_post
 from ..telegram_notify import notify_admin_new_listing
 from ..schemas import ListingCreate, ListingUpdate, ListingOut
-from .auth import get_or_create_user
+from .auth import get_or_create_user, is_admin_user
 
 register_heif_opener()
 
@@ -263,7 +263,8 @@ async def delete_listing(
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing:
         raise HTTPException(status_code=404, detail="E'lon topilmadi")
-    if listing.user_id != user.id:
+    # Egasi o'zining e'lonini, admin esa kim joylashidan qat'iy nazar istalgan e'lonni o'chira oladi.
+    if listing.user_id != user.id and not is_admin_user(user.telegram_id):
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
 
     await delete_channel_post(listing)
