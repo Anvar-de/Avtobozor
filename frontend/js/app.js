@@ -592,7 +592,7 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     return;
   }
 
-  const submitBtn = form.querySelector(".submit-btn");
+  const submitBtn = document.getElementById("btnSubmitCreate");
   const submitLabel = submitBtn.querySelector(".submit-btn__label");
   submitBtn.disabled = true;
   submitBtn.classList.add("submit-btn--loading");
