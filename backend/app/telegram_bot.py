@@ -188,7 +188,7 @@ async def post_to_channel(listing: Listing) -> list[int] | None:
     if listing.description:
         desc = listing.description.strip()
         caption_lines.append("")
-        caption_lines.append(desc[:500] + ("…" if len(desc) > 500 else ""))
+        caption_lines.append(desc[:300] + ("…" if len(desc) > 300 else ""))
     if listing.contact_phone:
         caption_lines.append("")
         caption_lines.append(f"📞 {listing.contact_phone}")
