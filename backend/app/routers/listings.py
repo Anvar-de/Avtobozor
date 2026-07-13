@@ -2,7 +2,7 @@ import io
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Query
 from PIL import Image
 from pillow_heif import register_heif_opener
 from sqlalchemy import String, cast, or_
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 from shared.database import get_db
 from shared.models import Listing, Photo, ListingStatus
 from shared.storage import save_photo
+from ..rate_limit import limiter
 from ..telegram_auth import get_telegram_user
 from ..telegram_bot import delete_channel_post
 from ..telegram_notify import notify_admin_new_listing
@@ -31,7 +32,9 @@ MAX_PHOTOS_PER_LISTING = 4
 
 
 @router.get("", response_model=list[ListingOut])
+@limiter.limit("60/minute")
 def list_listings(
+    request: Request,
     db: Session = Depends(get_db),
     search: Optional[str] = None,
     brand: Optional[str] = None,
@@ -86,7 +89,9 @@ def list_listings(
 
 
 @router.get("/my", response_model=list[ListingOut])
+@limiter.limit("30/minute")
 def my_listings(
+    request: Request,
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
 ):
@@ -102,7 +107,9 @@ def my_listings(
 
 
 @router.get("/{listing_id}", response_model=ListingOut)
+@limiter.limit("60/minute")
 def get_listing(
+    request: Request,
     listing_id: int,
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
@@ -130,7 +137,9 @@ def get_listing(
 
 
 @router.post("", response_model=ListingOut)
+@limiter.limit("10/minute")
 async def create_listing(
+    request: Request,
     payload: ListingCreate,
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
@@ -148,7 +157,9 @@ async def create_listing(
 
 
 @router.post("/{listing_id}/photos", response_model=ListingOut)
+@limiter.limit("20/minute")
 async def upload_photo(
+    request: Request,
     listing_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -202,7 +213,9 @@ async def upload_photo(
 
 
 @router.post("/{listing_id}/submit", response_model=ListingOut)
+@limiter.limit("10/minute")
 async def submit_listing(
+    request: Request,
     listing_id: int,
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
@@ -226,7 +239,9 @@ async def submit_listing(
 
 
 @router.patch("/{listing_id}", response_model=ListingOut)
+@limiter.limit("20/minute")
 def update_listing(
+    request: Request,
     listing_id: int,
     payload: ListingUpdate,
     db: Session = Depends(get_db),
@@ -254,7 +269,9 @@ def update_listing(
 
 
 @router.delete("/{listing_id}")
+@limiter.limit("10/minute")
 async def delete_listing(
+    request: Request,
     listing_id: int,
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),

@@ -14,11 +14,16 @@ logger = logging.getLogger("main")
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from aiogram.types import Update
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from shared.database import Base, engine
+from .rate_limit import limiter
 from .routers import auth, listings, meta
 from .telegram_bot import bot, dp, setup_menu_button, resolve_bot_username
 
@@ -49,6 +54,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Juda ko'p so'rov yuborildi. Birozdan keyin qayta urinib ko'ring."},
+    )
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -120,3 +136,15 @@ async def set_telegram_webhook():
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+
+
+# ============================================================
+# Render kabi hostinglar so'rovlarni o'z proksisi orqali yuboradi — bu bo'lmasa
+# har bir so'rovning "client IP"si Render proksisining o'zi bo'lib ko'rinadi,
+# shunda yuqoridagi IP-asosidagi rate limiting hamma foydalanuvchi uchun bitta
+# umumiy hisoblagichga aylanib qolar edi. ProxyHeadersMiddleware "X-Forwarded-For"
+# sarlavhasidan haqiqiy foydalanuvchi IP'sini o'qib beradi (trusted_hosts="*" —
+# chunki ilova faqat Render proksisi orqali ochiq, boshqa yo'l bilan kirib
+# bo'lmaydi).
+# ============================================================
+app = ProxyHeadersMiddleware(app, trusted_hosts="*")

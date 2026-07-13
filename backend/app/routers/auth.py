@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from shared.database import get_db
 from shared.models import User
+from ..rate_limit import limiter
 from ..telegram_auth import get_telegram_user
 from ..telegram_bot import ADMIN_CHAT_ID
 from ..schemas import UserOut
@@ -32,7 +33,8 @@ def get_or_create_user(db: Session, tg_user: dict) -> User:
 
 
 @router.post("/me", response_model=UserOut)
-def get_me(db: Session = Depends(get_db), tg_user: dict = Depends(get_telegram_user)):
+@limiter.limit("20/minute")
+def get_me(request: Request, db: Session = Depends(get_db), tg_user: dict = Depends(get_telegram_user)):
     """Mini App ochilganda chaqiriladi: foydalanuvchini topadi yoki yaratadi."""
     user = get_or_create_user(db, tg_user)
     return UserOut(
