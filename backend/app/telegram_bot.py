@@ -198,7 +198,7 @@ async def post_to_channel(listing: Listing) -> list[int] | None:
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
-            text="🚗 Avtosavdocom mini app",
+            text="🚗 E'lon berish va qidirish ilovasi",
             url=(
                 f"https://t.me/{BOT_USERNAME}/{MINI_APP_SHORT_NAME}?startapp=channel"
                 if BOT_USERNAME else MINI_APP_URL
