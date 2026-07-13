@@ -292,18 +292,26 @@ def update_listing(
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
 ):
-    """E'lonni tahrirlash. Foydalanuvchi faqat o'z e'lonini va statusni (masalan 'sold') o'zgartira oladi."""
+    """E'lonni tahrirlash. E'lon mazmunini (marka, narx, tavsif va h.k.) faqat
+    ADMIN o'zgartira oladi. Oddiy foydalanuvchi — hatto egasi bo'lsa ham —
+    faqat statusni "sold" ga o'zgartira oladi. Shu tufayli tasdiqlangan
+    e'lon mazmunini egasi tasdiqdan keyin o'zgartirib, moderatsiyani
+    chetlab o'tishi mumkin emas."""
     user = get_or_create_user(db, tg_user)
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing:
         raise HTTPException(status_code=404, detail="E'lon topilmadi")
-    if listing.user_id != user.id:
+
+    is_owner = listing.user_id == user.id
+    is_admin = is_admin_user(user.telegram_id)
+    if not is_owner and not is_admin:
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
 
     update_data = payload.model_dump(exclude_unset=True)
-    # Oddiy foydalanuvchi statusni faqat "sold" ga o'zgartira oladi, boshqacha yo'l admin bot orqali
-    if "status" in update_data and update_data["status"] != ListingStatus.sold:
-        update_data.pop("status")
+    if not is_admin:
+        # Oddiy foydalanuvchi (egasi bo'lsa ham) faqat statusni "sold"ga
+        # o'zgartira oladi — boshqa hech qanday maydonni tahrirlay olmaydi.
+        update_data = {"status": ListingStatus.sold} if update_data.get("status") == ListingStatus.sold else {}
 
     for field, value in update_data.items():
         setattr(listing, field, value)

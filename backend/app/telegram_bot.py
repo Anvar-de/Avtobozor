@@ -4,6 +4,7 @@ production/Render'da), HAM polling rejimida (bot/bot.py orqali, lokal test uchun
 ishlatiladi. Shu sababli Bot/Dispatcher shu yerda bir marta e'lon qilinadi.
 """
 import asyncio
+import html
 import io
 import logging
 import os
@@ -44,6 +45,13 @@ bot = Bot(token=BOT_TOKEN) if BOT_TOKEN else None
 dp = Dispatcher()
 
 BOT_USERNAME: str | None = None  # startup vaqtida to'ldiriladi
+
+
+def _e(value) -> str:
+    """HTML-maxsus belgilarni escape qiladi — foydalanuvchi kiritgan matn
+    (marka, tavsif, telefon va h.k.) parse_mode="HTML" bilan yuborilganda
+    Telegram tomonidan teg/havola sifatida talqin qilinib qolmasligi uchun."""
+    return html.escape(str(value)) if value else ""
 
 
 async def resolve_bot_username():
@@ -177,26 +185,26 @@ async def post_to_channel(listing: Listing) -> list[int] | None:
         return None
 
     caption_lines = [
-        f"🚗 <b>{listing.brand} {listing.model}</b>",
+        f"🚗 <b>{_e(listing.brand)} {_e(listing.model)}</b>",
         "",
         f"💰 <b>${listing.price:,.0f}</b>",
         f"📅 {listing.year}",
         f"🛣 {listing.mileage:,} km".replace(",", " "),
     ]
     if listing.transmission:
-        caption_lines.append(f"⚙️ {listing.transmission}")
+        caption_lines.append(f"⚙️ {_e(listing.transmission)}")
     if listing.fuel_type:
-        caption_lines.append(f"⛽ {listing.fuel_type}")
+        caption_lines.append(f"⛽ {_e(listing.fuel_type)}")
     location = format_location(listing.region, listing.district)
     if location:
-        caption_lines.append(f"📍 {location}")
+        caption_lines.append(f"📍 {_e(location)}")
     if listing.description:
         desc = listing.description.strip()
         caption_lines.append("")
-        caption_lines.append(desc[:300] + ("…" if len(desc) > 300 else ""))
+        caption_lines.append(_e(desc[:300] + ("…" if len(desc) > 300 else "")))
     if listing.contact_phone:
         caption_lines.append("")
-        caption_lines.append(f"📞 {listing.contact_phone}")
+        caption_lines.append(f"📞 {_e(listing.contact_phone)}")
     caption_lines.append("")
     caption_lines.append("Barcha e'lonlarni ko'rish uchun pastdagi tugmani bosing 👇👇👇")
     caption = "\n".join(caption_lines)

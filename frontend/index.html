@@ -72,7 +72,7 @@
 
   <!-- ============ CREATE VIEW ============ -->
   <main class="view" id="view-create" hidden>
-    <h2 class="section-title">Yangi e'lon</h2>
+    <h2 class="section-title" id="createFormTitle">Yangi e'lon</h2>
     <form id="createForm" class="form">
       <div class="form-row">
         <div class="autocomplete">
@@ -120,7 +120,7 @@
       </div>
       <div class="form-row">
         <label>Aloqa uchun telefon *<input required name="contact_phone" type="tel" placeholder="+998 90 123 45 67" /></label>
-        <label>Rasmlar (ko'pi bilan 4 ta)<input id="photoInput" type="file" accept="image/*" multiple /></label>
+        <label id="photoField">Rasmlar (ko'pi bilan 4 ta)<input id="photoInput" type="file" accept="image/*" multiple /></label>
       </div>
       <label>Tavsif<textarea name="description" rows="4" maxlength="300" placeholder="Avtomobil holati haqida qo'shimcha ma'lumot"></textarea></label>
       <div class="submit-actions">
@@ -130,7 +130,7 @@
           <span class="submit-btn__label">E'lonni joylash</span>
         </button>
       </div>
-      <p class="form-hint">E'lon joylashdan oldin admin tomonidan ko'rib chiqiladi.</p>
+      <p class="form-hint" id="createFormHint">E'lon joylashdan oldin admin tomonidan ko'rib chiqiladi.</p>
     </form>
   </main>
 
@@ -147,6 +147,6 @@
   <button class="lightbox__nav lightbox__nav--next" id="lightboxNext" aria-label="Keyingi rasm">›</button>
 </div>
 
-<script src="js/app.js?v=20"></script>
+<script src="js/app.js?v=21"></script>
 </body>
 </html>

@@ -87,6 +87,15 @@ function photoUrl(filePath) {
 function formatKm(n) {
   return new Intl.NumberFormat("uz-UZ").format(n) + " km";
 }
+// Foydalanuvchi kiritgan matnni (brand, model, tavsif va h.k.) innerHTML'ga
+// qo'yishdan oldin tozalaydi — aks holda e'lon matni ichiga yashiringan
+// <img onerror=...> kabi teglar boshqa foydalanuvchilar brauzerida ishga tushib
+// qolishi mumkin edi (stored XSS).
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]
+  ));
+}
 
 let toastTimer;
 function showToast(msg) {
@@ -124,6 +133,9 @@ function showView(name) {
 
 document.querySelectorAll("[data-back]").forEach((btn) => {
   btn.addEventListener("click", async () => {
+    // "Yangi e'lon" formasidan tahrirlashni yakunlamasdan chiqib ketilsa,
+    // forma keyingi safar "yaratish" rejimida ochilishi uchun tozalaymiz.
+    resetCreateFormState();
     showView(btn.dataset.back);
     // Ro'yxat sahifasiga qaytilganda uni qayta yuklaymiz — aks holda
     // o'chirilgan/o'zgartirilgan e'lon eski (keshlangan) holatda ko'rinib qolardi.
@@ -157,13 +169,13 @@ function renderCard(listing, { showStatus = false } = {}) {
       ${cover ? "" : "Rasm yo'q"}
     </div>
     <div class="card__body">
-      <div class="card__title">${listing.brand} ${listing.model}, ${listing.year}</div>
+      <div class="card__title">${escapeHtml(listing.brand)} ${escapeHtml(listing.model)}, ${listing.year}</div>
       <div class="card__price">${formatPrice(listing.price)}</div>
       <div class="card__row">
         <span class="odo">${formatKm(listing.mileage)}</span>
       </div>
       <div class="card__row card__meta">
-        <span class="tag">${[listing.district, listing.region].filter(Boolean).join(", ")}</span>
+        <span class="tag">${[listing.district, listing.region].filter(Boolean).map(escapeHtml).join(", ")}</span>
         <span class="views" data-views-count>👁 ${listing.views_count || 0}</span>
       </div>
       ${showStatus ? `<span class="status-dot status-dot--${listing.status}">${STATUS_LABELS[listing.status]}</span>` : ""}
@@ -299,27 +311,28 @@ async function openDetail(id) {
 
     content.innerHTML = `
       ${gallery}
-      <div class="detail-title">${l.brand} ${l.model}</div>
+      <div class="detail-title">${escapeHtml(l.brand)} ${escapeHtml(l.model)}</div>
       <div class="detail-price">${formatPrice(l.price)}</div>
       <div class="detail-specs">
         <div class="spec"><div class="spec__label">Yili</div><div class="spec__value">${l.year}</div></div>
         <div class="spec"><div class="spec__label">Probeg</div><div class="spec__value">${formatKm(l.mileage)}</div></div>
-        <div class="spec"><div class="spec__label">Uzatma</div><div class="spec__value">${l.transmission || "—"}</div></div>
-        <div class="spec"><div class="spec__label">Yoqilg'i</div><div class="spec__value">${l.fuel_type || "—"}</div></div>
-        <div class="spec"><div class="spec__label">Hudud</div><div class="spec__value">${l.region || "—"}</div></div>
-        <div class="spec"><div class="spec__label">Shahar/tuman</div><div class="spec__value">${l.district || "—"}</div></div>
+        <div class="spec"><div class="spec__label">Uzatma</div><div class="spec__value">${l.transmission ? escapeHtml(l.transmission) : "—"}</div></div>
+        <div class="spec"><div class="spec__label">Yoqilg'i</div><div class="spec__value">${l.fuel_type ? escapeHtml(l.fuel_type) : "—"}</div></div>
+        <div class="spec"><div class="spec__label">Hudud</div><div class="spec__value">${l.region ? escapeHtml(l.region) : "—"}</div></div>
+        <div class="spec"><div class="spec__label">Shahar/tuman</div><div class="spec__value">${l.district ? escapeHtml(l.district) : "—"}</div></div>
         <div class="spec"><div class="spec__label">Holati</div><div class="spec__value">${STATUS_LABELS[l.status]}</div></div>
       </div>
-      ${l.description ? `<div class="detail-desc">${l.description}</div>` : ""}
+      ${l.description ? `<div class="detail-desc">${escapeHtml(l.description)}</div>` : ""}
       ${
         isOwner
           ? `<div class="owner-actions">
                ${l.status !== "sold" ? `<button class="success" id="markSold">Sotildi deb belgilash</button>` : ""}
+               ${me.is_admin ? `<button id="editListing">Tahrirlash</button>` : ""}
                <button class="danger" id="deleteListing">O'chirish</button>
              </div>`
           : `
-             ${l.contact_phone ? `<a class="contact-btn" href="tel:${l.contact_phone}">📞 Sotuvchiga qo'ng'iroq qilish</a>` : ""}
-             ${me.is_admin ? `<div class="owner-actions"><button class="danger" id="deleteListing">O'chirish (admin)</button></div>` : ""}
+             ${l.contact_phone ? `<a class="contact-btn" href="tel:${escapeHtml(l.contact_phone)}">📞 Sotuvchiga qo'ng'iroq qilish</a>` : ""}
+             ${me.is_admin ? `<div class="owner-actions"><button id="editListing">Tahrirlash</button><button class="danger" id="deleteListing">O'chirish (admin)</button></div>` : ""}
             `
       }
     `;
@@ -340,6 +353,9 @@ async function openDetail(id) {
           showToast(e.message);
         }
       });
+    }
+    if (me.is_admin) {
+      document.getElementById("editListing")?.addEventListener("click", () => openEditForm(l));
     }
     if (canDelete) {
       document.getElementById("deleteListing")?.addEventListener("click", async () => {
@@ -438,11 +454,57 @@ document.getElementById("btnMyListings").addEventListener("click", () => {
 });
 
 // ============================================================
-// YANGI E'LON
+// YANGI E'LON / TAHRIRLASH
 // ============================================================
-document.getElementById("btnCreate").addEventListener("click", () => showView("create"));
-document.getElementById("btnCreateFromMy").addEventListener("click", () => showView("create"));
-document.getElementById("btnCreateFromDetail").addEventListener("click", () => showView("create"));
+// null bo'lsa — forma yangi e'lon yaratish uchun; aks holda shu ID'dagi
+// e'lon tahrirlanmoqda (faqat admin uchun, backend shuni talab qiladi).
+let editingListingId = null;
+
+function resetCreateFormState() {
+  editingListingId = null;
+  document.getElementById("createFormTitle").textContent = "Yangi e'lon";
+  document.getElementById("createFormHint").textContent = "E'lon joylashdan oldin admin tomonidan ko'rib chiqiladi.";
+  document.getElementById("photoField").hidden = false;
+  document.getElementById("btnSubmitCreate").querySelector(".submit-btn__label").textContent = "E'lonni joylash";
+}
+
+function startCreateFlow() {
+  resetCreateFormState();
+  document.getElementById("createForm").reset();
+  resetDistrictSelect();
+  showView("create");
+}
+
+// Faqat admin uchun: mavjud e'lonni "Yangi e'lon" formasi orqali tahrirlaydi.
+// Rasm maydoni yashiriladi — bu forma faqat matn/raqam maydonlarini yangilaydi.
+function openEditForm(listing) {
+  const form = document.getElementById("createForm");
+  form.reset();
+  editingListingId = listing.id;
+
+  form.brand.value = listing.brand || "";
+  form.model.value = listing.model || "";
+  form.year.value = listing.year || "";
+  document.getElementById("cMileage").value = listing.mileage ? new Intl.NumberFormat("uz-UZ").format(listing.mileage) : "";
+  document.getElementById("cPrice").value = listing.price ? new Intl.NumberFormat("uz-UZ").format(listing.price) : "";
+  form.transmission.value = listing.transmission || "";
+  form.fuel_type.value = listing.fuel_type || "";
+  form.region.value = listing.region || "";
+  regionSelect.dispatchEvent(new Event("change"));
+  form.district.value = listing.district || "";
+  form.contact_phone.value = listing.contact_phone || "";
+  form.description.value = listing.description || "";
+
+  document.getElementById("createFormTitle").textContent = "E'lonni tahrirlash";
+  document.getElementById("createFormHint").textContent = "O'zgarishlar saqlangach, e'lon darhol yangilanadi.";
+  document.getElementById("photoField").hidden = true;
+  document.getElementById("btnSubmitCreate").querySelector(".submit-btn__label").textContent = "Saqlash";
+  showView("create");
+}
+
+document.getElementById("btnCreate").addEventListener("click", startCreateFlow);
+document.getElementById("btnCreateFromMy").addEventListener("click", startCreateFlow);
+document.getElementById("btnCreateFromDetail").addEventListener("click", startCreateFlow);
 
 // ============================================================
 // Hudud / Shahar-tuman (bog'liq dropdownlar)
@@ -588,18 +650,6 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
   const form = e.target;
   const fd = new FormData(form);
 
-  const photoInput = document.getElementById("photoInput");
-  if (photoInput.files.length > MAX_PHOTOS) {
-    showToast(`Ko'pi bilan ${MAX_PHOTOS} ta rasm yuklash mumkin`);
-    return;
-  }
-
-  const submitBtn = document.getElementById("btnSubmitCreate");
-  const submitLabel = submitBtn.querySelector(".submit-btn__label");
-  submitBtn.disabled = true;
-  submitBtn.classList.add("submit-btn--loading");
-  submitLabel.textContent = "Yuborilmoqda...";
-
   const payload = {
     brand: fd.get("brand"),
     model: fd.get("model"),
@@ -613,6 +663,42 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     description: fd.get("description") || null,
     contact_phone: fd.get("contact_phone") || null,
   };
+
+  const submitBtn = document.getElementById("btnSubmitCreate");
+  const submitLabel = submitBtn.querySelector(".submit-btn__label");
+
+  // Tahrirlash rejimi (faqat admin uchun) — yangi e'lon yaratish/rasm
+  // yuklash oqimidan butunlay boshqacha, oddiy PATCH so'rovi kifoya.
+  if (editingListingId) {
+    const id = editingListingId;
+    submitBtn.disabled = true;
+    submitBtn.classList.add("submit-btn--loading");
+    submitLabel.textContent = "Saqlanmoqda...";
+    try {
+      await api(`/api/listings/${id}`, { method: "PATCH", body: payload });
+      showToast("E'lon yangilandi");
+      resetCreateFormState();
+      showView("detail");
+      openDetail(id);
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("submit-btn--loading");
+      submitLabel.textContent = editingListingId ? "Saqlash" : "E'lonni joylash";
+    }
+    return;
+  }
+
+  const photoInput = document.getElementById("photoInput");
+  if (photoInput.files.length > MAX_PHOTOS) {
+    showToast(`Ko'pi bilan ${MAX_PHOTOS} ta rasm yuklash mumkin`);
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.classList.add("submit-btn--loading");
+  submitLabel.textContent = "Yuborilmoqda...";
 
   try {
     const listing = await api("/api/listings", { method: "POST", body: payload });
