@@ -37,7 +37,7 @@ MINI_APP_SHORT_NAME = os.getenv("MINI_APP_SHORT_NAME", "Autosavdo").strip()
 # Kanal posti uchun bir nechta e'lon rasmidan yasaladigan kollaj sozlamalari.
 # Cheklovlar xotira/CPU'ni yeb ketadigan yoki osilib qoladigan holatlarning oldini olish uchun.
 COLLAGE_MAX_PHOTOS = 9  # kollajga kiritiladigan rasmlar soni (3x3 grid)
-COLLAGE_SIZE = 2048  # kollaj doim shu o'lchamda (kvadrat, piksel) chiqadi
+COLLAGE_SIZE = 1600  # kollaj doim shu o'lchamda (kvadrat, piksel) chiqadi
 COLLAGE_MAX_PHOTO_BYTES = 15 * 1024 * 1024  # bitta rasm uchun xavfsizlik chegarasi
 
 bot = Bot(token=BOT_TOKEN) if BOT_TOKEN else None
@@ -126,23 +126,28 @@ def _assemble_collage(images_bytes: list[bytes]) -> bytes | None:
     return buf.getvalue()
 
 
+async def _fetch_photo(client: httpx.AsyncClient, url: str) -> bytes | None:
+    try:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        data = resp.content
+    except Exception:
+        logger.warning("Kollaj uchun rasmni yuklab bo'lmadi: %s", url, exc_info=True)
+        return None
+    if len(data) > COLLAGE_MAX_PHOTO_BYTES:
+        logger.warning("Kollaj uchun rasm hajmi chegaradan katta, o'tkazib yuborildi: %s", url)
+        return None
+    return data
+
+
 async def _read_photo_urls(urls: list[str]) -> list[bytes]:
-    """Rasm baytlarini URL orqali (R2/CDN) yuklab oladi."""
-    images_bytes: list[bytes] = []
+    """Rasm baytlarini URL orqali (R2/CDN) parallel yuklab oladi (ketma-ket
+    emas) — shunda bir nechta rasmli e'londa adminga/kanalga xabar yuborish
+    rasmlar sonicha sekinlashib ketmaydi. Rasmlar soni COLLAGE_MAX_PHOTOS
+    bilan cheklangani uchun parallel ulanishlar soni ham cheklangan."""
     async with httpx.AsyncClient(timeout=10.0) as client:
-        for url in urls:
-            try:
-                resp = await client.get(url)
-                resp.raise_for_status()
-                data = resp.content
-            except Exception:
-                logger.warning("Kollaj uchun rasmni yuklab bo'lmadi: %s", url, exc_info=True)
-                continue
-            if len(data) > COLLAGE_MAX_PHOTO_BYTES:
-                logger.warning("Kollaj uchun rasm hajmi chegaradan katta, o'tkazib yuborildi: %s", url)
-                continue
-            images_bytes.append(data)
-    return images_bytes
+        results = await asyncio.gather(*(_fetch_photo(client, url) for url in urls))
+    return [data for data in results if data is not None]
 
 
 async def _build_collage(photo_urls: list[str]) -> bytes | None:
