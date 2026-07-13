@@ -1,3 +1,4 @@
+import asyncio
 import io
 import uuid
 from typing import Optional
@@ -29,6 +30,36 @@ router = APIRouter(prefix="/api/listings", tags=["listings"])
 # yoki boshqacha Content-Type yuborishi mumkin, bu esa haqiqiy rasmni asossiz rad etardi.
 ALLOWED_IMAGE_FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
 MAX_PHOTOS_PER_LISTING = 4
+
+
+def _decode_and_normalize_photo(contents: bytes) -> tuple[bytes, str]:
+    """Rasmni dekodlaydi (soxta/buzuq faylni rad etish uchun) va HEIC/HEIF
+    bo'lsa JPEG'ga konvertatsiya qiladi. Pillow'ning dekodlash/konvertatsiya
+    ishi CPU-bog'liq bo'lgani uchun bu funksiya asyncio.to_thread orqali
+    alohida oqimda chaqiriladi — aks holda katta rasm butun event loop'ni
+    (shu jumladan Telegram webhook so'rovlarini ham) bloklab qo'yardi."""
+    try:
+        Image.open(io.BytesIO(contents)).verify()
+        # verify() faqat fayl strukturasini tekshiradi, piksellarni to'liq
+        # dekodlamaydi — ba'zi buzuq fayllar shu tekshiruvdan o'tib ketib,
+        # keyinroq (masalan kanal kollajida) dekodlashda muvaffaqiyatsiz bo'lishi
+        # mumkin edi. Shuning uchun bu yerda to'liq dekodlab ko'ramiz (verify()
+        # dan keyin obyektni qayta ishlatib bo'lmaydi, shu sabab qayta ochamiz).
+        img = Image.open(io.BytesIO(contents))
+        img.load()
+        fmt = img.format
+    except Exception as exc:
+        raise ValueError("Fayl haqiqiy rasm emas") from exc
+
+    if fmt in ("HEIF", "HEIC"):
+        # iPhone'lar odatda HEIC formatida suratga oladi — brauzerlar buni
+        # ko'rsata olmaydi, shu sabab JPEG'ga konvertatsiya qilib saqlaymiz.
+        buffer = io.BytesIO()
+        img.convert("RGB").save(buffer, format="JPEG", quality=90)
+        contents = buffer.getvalue()
+        fmt = "JPEG"
+
+    return contents, fmt
 
 
 @router.get("", response_model=list[ListingOut])
@@ -64,12 +95,13 @@ def list_listings(
         numeric_columns = [Listing.year, Listing.price, Listing.mileage]
         for word in search.split():
             like = f"%{word}%"
-            q = q.filter(
-                or_(
-                    *[col.ilike(like) for col in text_columns],
-                    *[cast(col, String).ilike(like) for col in numeric_columns],
-                )
-            )
+            conditions = [col.ilike(like) for col in text_columns]
+            # Raqamsiz so'z (masalan "Cobalt") hech qachon raqamli ustunga mos
+            # kelmaydi — shunday so'zlar uchun cast(...)+ilike qo'shimcha
+            # ishlashni (har bir qatorda CAST hisoblashni) tashlab yuboramiz.
+            if any(ch.isdigit() for ch in word):
+                conditions += [cast(col, String).ilike(like) for col in numeric_columns]
+            q = q.filter(or_(*conditions))
     if brand:
         q = q.filter(Listing.brand.ilike(f"%{brand}%"))
     if region:
@@ -177,32 +209,20 @@ async def upload_photo(
 
     contents = await file.read()
     try:
-        Image.open(io.BytesIO(contents)).verify()
-        # verify() faqat fayl strukturasini tekshiradi, piksellarni to'liq
-        # dekodlamaydi — ba'zi buzuq fayllar shu tekshiruvdan o'tib ketib,
-        # keyinroq (masalan kanal kollajida) dekodlashda muvaffaqiyatsiz bo'lishi
-        # mumkin edi. Shuning uchun bu yerda to'liq dekodlab ko'ramiz (verify()
-        # dan keyin obyektni qayta ishlatib bo'lmaydi, shu sabab qayta ochamiz).
-        img = Image.open(io.BytesIO(contents))
-        img.load()
-        fmt = img.format
-    except Exception:
+        contents, fmt = await asyncio.to_thread(_decode_and_normalize_photo, contents)
+    except ValueError:
         raise HTTPException(status_code=400, detail="Fayl haqiqiy rasm emas")
-
-    if fmt in ("HEIF", "HEIC"):
-        # iPhone'lar odatda HEIC formatida suratga oladi — brauzerlar buni
-        # ko'rsata olmaydi, shu sabab JPEG'ga konvertatsiya qilib saqlaymiz.
-        buffer = io.BytesIO()
-        img.convert("RGB").save(buffer, format="JPEG", quality=90)
-        contents = buffer.getvalue()
-        fmt = "JPEG"
 
     if fmt not in ALLOWED_IMAGE_FORMATS:
         raise HTTPException(status_code=400, detail="Faqat JPEG, PNG yoki WEBP rasm qabul qilinadi")
 
     ext = ALLOWED_IMAGE_FORMATS[fmt]
     filename = f"{uuid.uuid4().hex}{ext}"
-    file_path = save_photo(contents, filename)
+    # save_photo (R2 rejimida) sinxron/blocking tarmoq chaqiruvi (boto3
+    # put_object) — asyncio.to_thread orqali chaqirmasak, fayl R2'ga to'liq
+    # yuklanib bo'lguncha butun event loop (va shu bilan Telegram webhook
+    # so'rovlari ham) bloklanib qolardi.
+    file_path = await asyncio.to_thread(save_photo, contents, filename)
 
     position = len(listing.photos)
     photo = Photo(listing_id=listing.id, file_path=file_path, position=position)

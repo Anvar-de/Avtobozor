@@ -11,6 +11,7 @@ import os
 from urllib.parse import urljoin
 
 import boto3
+from botocore.config import Config
 
 R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "").strip()
 R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "").strip()
@@ -35,6 +36,10 @@ if R2_ENABLED:
         aws_access_key_id=R2_ACCESS_KEY_ID,
         aws_secret_access_key=R2_SECRET_ACCESS_KEY,
         region_name="auto",
+        # Standart boto3 timeout (~60s) R2 sekinlashsa yoki javob bermasa,
+        # butun (sinxron) so'rovni shuncha vaqtga bloklab qo'yishi mumkin edi —
+        # chegarani qisqartirib, muammo tezroq xato sifatida qaytishini ta'minlaymiz.
+        config=Config(connect_timeout=5, read_timeout=15),
     )
 
 
