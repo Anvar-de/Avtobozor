@@ -3,13 +3,13 @@ import io
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile, File, Query
 from PIL import Image
 from pillow_heif import register_heif_opener
 from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session, joinedload
 
-from shared.database import get_db
+from shared.database import SessionLocal, get_db
 from shared.models import Listing, Photo, ListingStatus
 from shared.storage import save_photo
 from ..rate_limit import limiter
@@ -232,16 +232,41 @@ async def upload_photo(
     return listing
 
 
+async def _notify_admin_background(listing_id: int) -> None:
+    """submit_listing javob qaytargandan KEYIN, orqa fonda chaqiriladi —
+    so'rovning DB session'i shu payt allaqachon yopilgan bo'lishi mumkinligi
+    uchun (BackgroundTasks alohida ishga tushirilishiga tayanmasdan) o'zi
+    yangi session ochib e'lonni qayta o'qiydi. Xatolik (masalan Telegram/R2
+    sekinlik yoki xato) endi foydalanuvchini kutdirmaydi — u allaqachon
+    javobni olib bo'lgan; xato faqat logga tushadi (notify_admin_new_listing
+    ichida allaqachon shunday ishlaydi)."""
+    db = SessionLocal()
+    try:
+        listing = (
+            db.query(Listing)
+            .options(joinedload(Listing.photos), joinedload(Listing.owner))
+            .filter(Listing.id == listing_id)
+            .first()
+        )
+        if listing:
+            await notify_admin_new_listing(listing)
+    finally:
+        db.close()
+
+
 @router.post("/{listing_id}/submit", response_model=ListingOut)
 @limiter.limit("10/minute")
 async def submit_listing(
     request: Request,
     listing_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     tg_user: dict = Depends(get_telegram_user),
 ):
     """Rasmlarni yuklab bo'lgach chaqiriladi — shu payt admin (rasmlari va
-    yuboruvchi havolasi bilan) xabar oladi."""
+    yuboruvchi havolasi bilan) xabar oladi. Xabar yuborish orqa fonda
+    (javob qaytgandan keyin) bajariladi — shunda foydalanuvchi Telegram/R2
+    sekinligini kutib turmaydi."""
     user = get_or_create_user(db, tg_user)
     listing = (
         db.query(Listing)
@@ -254,7 +279,7 @@ async def submit_listing(
     if listing.user_id != user.id:
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
 
-    await notify_admin_new_listing(listing)
+    background_tasks.add_task(_notify_admin_background, listing.id)
     return listing
 
 
