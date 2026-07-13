@@ -159,8 +159,10 @@ function renderCard(listing, { showStatus = false } = {}) {
     <div class="card__body">
       <div class="card__title">${listing.brand} ${listing.model}, ${listing.year}</div>
       <div class="card__price">${formatPrice(listing.price)}</div>
-      <div class="card__meta">
+      <div class="card__row">
         <span class="odo">${formatKm(listing.mileage)}</span>
+      </div>
+      <div class="card__row card__meta">
         <span class="tag">${[listing.district, listing.region].filter(Boolean).join(", ")}</span>
         <span class="views" data-views-count>👁 ${listing.views_count || 0}</span>
       </div>
