@@ -9,9 +9,28 @@ modulda alohida turadi — main.py va routerlar orasida aylanma import
 """
 from fastapi import Request
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from .telegram_auth import validate_init_data
+
+
+def get_client_ip(request: Request) -> str:
+    """Haqiqiy mijoz IP'sini topadi.
+
+    Render oldida Cloudflare ham turadi (client -> Cloudflare -> Render ->
+    ilova) — ya'ni bir nechta proksi bosqichi bor. `CF-Connecting-IP`
+    Cloudflare tomonidan qo'yiladigan va o'zgartirib bo'lmaydigan sarlavha
+    bo'lib, har doim haqiqiy mijoz IP'sini ko'rsatadi — shuning uchun eng
+    ishonchli manba. Uni topa olmasak, `X-Forwarded-For`dagi birinchi
+    (eng chapdagi) manzilga qaytamiz — bu ham odatiy holatda asl mijoz
+    bo'ladi (keyingi bosqichlar o'z manzilini o'ngga qo'shib boradi).
+    """
+    cf_ip = request.headers.get("cf-connecting-ip")
+    if cf_ip:
+        return cf_ip.strip()
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 def rate_limit_key(request: Request) -> str:
@@ -34,7 +53,7 @@ def rate_limit_key(request: Request) -> str:
                 return f"tg:{telegram_id}"
         except Exception:
             pass
-    return get_remote_address(request)
+    return get_client_ip(request)
 
 
 limiter = Limiter(key_func=rate_limit_key)

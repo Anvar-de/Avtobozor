@@ -20,7 +20,6 @@ from aiogram.types import Update
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from shared.database import Base, engine
 from .rate_limit import limiter
@@ -136,15 +135,3 @@ async def set_telegram_webhook():
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
-
-
-# ============================================================
-# Render kabi hostinglar so'rovlarni o'z proksisi orqali yuboradi — bu bo'lmasa
-# har bir so'rovning "client IP"si Render proksisining o'zi bo'lib ko'rinadi,
-# shunda yuqoridagi IP-asosidagi rate limiting hamma foydalanuvchi uchun bitta
-# umumiy hisoblagichga aylanib qolar edi. ProxyHeadersMiddleware "X-Forwarded-For"
-# sarlavhasidan haqiqiy foydalanuvchi IP'sini o'qib beradi (trusted_hosts="*" —
-# chunki ilova faqat Render proksisi orqali ochiq, boshqa yo'l bilan kirib
-# bo'lmaydi).
-# ============================================================
-app = ProxyHeadersMiddleware(app, trusted_hosts="*")
