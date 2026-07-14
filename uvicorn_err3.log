@@ -1,6 +1,0 @@
-WARNING:main:WEBHOOK_SECRET .env'da sozlanmagan — tasodifiy qiymat generatsiya qilindi. Production'da barqaror ishlashi uchun .env faylida WEBHOOK_SECRET'ni o'zingiz belgilang.
-INFO:     Started server process [31908]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8125 (Press CTRL+C to quit)
-WARNING:slowapi:ratelimit 30 per 1 minute (1.1.1.1) exceeded at endpoint: /api/car-brands
