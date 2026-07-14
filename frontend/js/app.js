@@ -206,12 +206,46 @@ let feedSegmentCount = 0; // joriy davrda infinity scroll orqali yuklangan e'lon
 // takrorlanib qo'shilib ketishining (va offset noto'g'ri hisoblanishining) oldi olinadi.
 let feedRequestId = 0;
 
+// Raqamli filtr maydonidan (minglik ajratkichlar bilan formatlangan bo'lishi
+// mumkin) tozalangan butun sonni oladi, bo'sh bo'lsa null qaytaradi.
+function numericFieldValue(id) {
+  const digits = document.getElementById(id).value.replace(/\D/g, "");
+  return digits ? digits : null;
+}
+
 function feedParams() {
   const params = new URLSearchParams();
   const search = document.getElementById("fSearch").value.trim();
   if (search) params.set("search", search);
+
+  const yearMin = document.getElementById("fYearMin").value.trim();
+  const yearMax = document.getElementById("fYearMax").value.trim();
+  if (yearMin) params.set("min_year", yearMin);
+  if (yearMax) params.set("max_year", yearMax);
+
+  const mileageMin = numericFieldValue("fMileageMin");
+  const mileageMax = numericFieldValue("fMileageMax");
+  if (mileageMin) params.set("min_mileage", mileageMin);
+  if (mileageMax) params.set("max_mileage", mileageMax);
+
+  const priceMin = numericFieldValue("fPriceMin");
+  const priceMax = numericFieldValue("fPriceMax");
+  if (priceMin) params.set("min_price", priceMin);
+  if (priceMax) params.set("max_price", priceMax);
+
   return params;
 }
+
+// ============================================================
+// Qidiruvning "qo'shimcha parametrlar" (slider) bo'limi
+// ============================================================
+const advancedFiltersEl = document.getElementById("advancedFilters");
+const btnAdvancedToggle = document.getElementById("btnAdvancedToggle");
+btnAdvancedToggle.addEventListener("click", () => {
+  const isOpen = advancedFiltersEl.classList.toggle("advanced-filters--open");
+  btnAdvancedToggle.classList.toggle("search-box__adv-btn--active", isOpen);
+  btnAdvancedToggle.setAttribute("aria-expanded", String(isOpen));
+});
 
 async function fetchFeedPage() {
   if (feedLoading || !feedHasMore) return;
@@ -644,6 +678,10 @@ function attachThousandsFormatter(input) {
 }
 attachThousandsFormatter(document.getElementById("cMileage"));
 attachThousandsFormatter(document.getElementById("cPrice"));
+attachThousandsFormatter(document.getElementById("fMileageMin"));
+attachThousandsFormatter(document.getElementById("fMileageMax"));
+attachThousandsFormatter(document.getElementById("fPriceMin"));
+attachThousandsFormatter(document.getElementById("fPriceMax"));
 
 document.getElementById("createForm").addEventListener("submit", async (e) => {
   e.preventDefault();

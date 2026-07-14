@@ -75,6 +75,8 @@ def list_listings(
     max_price: Optional[float] = None,
     min_year: Optional[int] = None,
     max_year: Optional[int] = None,
+    min_mileage: Optional[int] = None,
+    max_mileage: Optional[int] = None,
     limit: int = Query(30, le=100),
     offset: int = 0,
 ):
@@ -116,6 +118,10 @@ def list_listings(
         q = q.filter(Listing.year >= min_year)
     if max_year is not None:
         q = q.filter(Listing.year <= max_year)
+    if min_mileage is not None:
+        q = q.filter(Listing.mileage >= min_mileage)
+    if max_mileage is not None:
+        q = q.filter(Listing.mileage <= max_mileage)
 
     return q.order_by(Listing.created_at.desc()).offset(offset).limit(limit).all()
 

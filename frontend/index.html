@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=26" />
+<link rel="stylesheet" href="css/style.css?v=27" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -32,7 +32,49 @@
   <main class="view" id="view-feed">
 
     <div class="filters" id="filters">
-      <input class="chip-input" id="fSearch" type="text" placeholder="Marka, model yoki hudud bo'yicha qidirish" />
+      <div class="search-wrap">
+        <div class="search-box">
+          <input class="chip-input" id="fSearch" type="text" placeholder="Marka, model yoki hudud bo'yicha qidirish" />
+          <button type="button" class="search-box__adv-btn" id="btnAdvancedToggle" aria-label="Qo'shimcha parametrlar" aria-expanded="false">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="9" cy="7" r="2.2" fill="currentColor"/>
+              <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="12" r="2.2" fill="currentColor"/>
+              <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="17" r="2.2" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+        <div class="advanced-filters" id="advancedFilters">
+          <div class="advanced-filters__inner">
+            <div class="advanced-filters__row">
+              <span class="advanced-filters__label">Yili</span>
+              <div class="advanced-filters__inputs">
+                <input class="chip-input" id="fYearMin" type="number" placeholder="dan" />
+                <span class="advanced-filters__sep">—</span>
+                <input class="chip-input" id="fYearMax" type="number" placeholder="gacha" />
+              </div>
+            </div>
+            <div class="advanced-filters__row">
+              <span class="advanced-filters__label">Probeg, km</span>
+              <div class="advanced-filters__inputs">
+                <input class="chip-input" id="fMileageMin" type="text" inputmode="numeric" autocomplete="off" placeholder="dan" />
+                <span class="advanced-filters__sep">—</span>
+                <input class="chip-input" id="fMileageMax" type="text" inputmode="numeric" autocomplete="off" placeholder="gacha" />
+              </div>
+            </div>
+            <div class="advanced-filters__row">
+              <span class="advanced-filters__label">Narxi, $</span>
+              <div class="advanced-filters__inputs">
+                <input class="chip-input" id="fPriceMin" type="text" inputmode="numeric" autocomplete="off" placeholder="dan" />
+                <span class="advanced-filters__sep">—</span>
+                <input class="chip-input" id="fPriceMax" type="text" inputmode="numeric" autocomplete="off" placeholder="gacha" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <button class="chip-btn" id="btnFilter">Qidirish</button>
     </div>
 
@@ -147,6 +189,6 @@
   <button class="lightbox__nav lightbox__nav--next" id="lightboxNext" aria-label="Keyingi rasm">›</button>
 </div>
 
-<script src="js/app.js?v=21"></script>
+<script src="js/app.js?v=22"></script>
 </body>
 </html>

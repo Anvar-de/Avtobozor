@@ -152,6 +152,47 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 .chip-btn:active { filter: brightness(0.92); }
 
+.search-wrap { display: flex; flex-direction: column; min-width: 0; }
+
+/* Qidiruv maydoni ichidagi "qo'shimcha parametrlar" (slider) tugmasi —
+   maydonning o'ziga input orqali padding-right bilan joy ochiladi, shu
+   sabab qidiruv maydonining tashqi o'lchami o'zgarmaydi. */
+.search-box { position: relative; }
+.search-box .chip-input { width: 100%; padding-right: 40px; }
+.search-box__adv-btn {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+}
+.search-box__adv-btn:active { background: var(--surface-2); }
+.search-box__adv-btn--active { color: var(--accent); background: var(--surface-2); }
+
+/* "grid-template-rows: 0fr -> 1fr" — balandlikni qattiq piksellarda
+   taxmin qilmasdan silliq ochish/yopish uchun standart usul. */
+.advanced-filters {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+.advanced-filters--open { grid-template-rows: 1fr; }
+.advanced-filters__inner { overflow: hidden; min-height: 0; }
+.advanced-filters__row { display: flex; flex-direction: column; gap: 6px; padding: 12px 2px 0; }
+.advanced-filters__row:first-child { padding-top: 10px; }
+.advanced-filters__label { font-size: 13px; color: var(--text-muted); }
+.advanced-filters__inputs { display: flex; align-items: center; gap: 8px; }
+.advanced-filters__inputs .chip-input { flex: 1; min-width: 0; }
+.advanced-filters__sep { color: var(--text-muted); font-size: 13px; }
+
 /* ---------- Listing grid & card ---------- */
 .listing-grid {
   display: flex;
