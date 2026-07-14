@@ -7,11 +7,14 @@ yuklangan fayllar o'chib ketadi), rasmlar doimiy joyda saqlanishi SHART.
 R2 muhit o'zgaruvchilari (R2_*) sozlanmagan bo'lsa, faqat lokal test qulayligi
 uchun diskka (UPLOAD_DIR) yozadi.
 """
+import logging
 import os
 from urllib.parse import urljoin
 
 import boto3
 from botocore.config import Config
+
+logger = logging.getLogger("storage")
 
 R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "").strip()
 R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "").strip()
@@ -57,6 +60,35 @@ def save_photo(contents: bytes, filename: str) -> str:
     with open(filepath, "wb") as f:
         f.write(contents)
     return f"/uploads/{filename}"
+
+
+def delete_photo(file_path: str) -> None:
+    """Rasm faylini R2'dan yoki diskdan o'chiradi.
+
+    `file_path` R2 rejimida to'liq URL, lokal rejimda "/uploads/xxx.jpg" ko'rinishida
+    bo'ladi — ikkalasidan ham haqiqiy fayl nomini olib, saqlangan joydan o'chiramiz.
+    E'lon/rasm DBdan allaqachon o'chirilgani uchun (bu funksiya shundan keyin
+    chaqiriladi) xatolik yuz bersa ham faqat logga yozib, jim o'tkazib yuboramiz —
+    aks holda foydalanuvchiga ko'rinadigan o'chirish so'rovi keraksiz muvaffaqiyatsiz
+    bo'lib qolardi."""
+    filename = os.path.basename(file_path.split("?")[0])
+    if not filename:
+        return
+
+    if R2_ENABLED:
+        try:
+            _client.delete_object(Bucket=R2_BUCKET_NAME, Key=filename)
+        except Exception:
+            logger.exception("R2'dan rasmni o'chirishda xatolik: %s", filename)
+        return
+
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    try:
+        os.remove(filepath)
+    except FileNotFoundError:
+        pass
+    except Exception:
+        logger.exception("Diskdan rasmni o'chirishda xatolik: %s", filepath)
 
 
 def resolve_url(file_path: str, base_url: str) -> str:

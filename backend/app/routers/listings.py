@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from shared.database import SessionLocal, get_db
 from shared.models import Listing, Photo, ListingStatus
-from shared.storage import save_photo
+from shared.storage import save_photo, delete_photo
 from ..rate_limit import limiter
 from ..telegram_auth import get_telegram_user
 from ..telegram_bot import delete_channel_post
@@ -30,11 +30,36 @@ router = APIRouter(prefix="/api/listings", tags=["listings"])
 # yoki boshqacha Content-Type yuborishi mumkin, bu esa haqiqiy rasmni asossiz rad etardi.
 ALLOWED_IMAGE_FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
 MAX_PHOTOS_PER_LISTING = 4
+# Bitta rasm uchun maksimal hajm. Avvalgi kodda `file.read()` hajm chegarasisiz
+# butun faylni xotiraga o'qirdi — foydalanuvchi juda katta fayl yuborib, worker
+# xotirasini band qilishi (DoS) mumkin edi. Zamonaviy telefon suratlari odatda
+# bir necha MB bo'lgani uchun 15MB amaliyotda yetarli zaxira bilan.
+MAX_PHOTO_SIZE_BYTES = 15 * 1024 * 1024
+
+
+async def _read_upload_within_limit(file: UploadFile, max_size: int) -> bytes:
+    """Faylni bo'lak-bo'lak o'qib, `max_size`dan oshsa darhol to'xtaydi — shu
+    tufayli hajm limitidan oshib ketgan fayl to'liq xotiraga yuklanib bo'lmaydi."""
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_size:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Fayl hajmi {max_size // (1024 * 1024)}MB dan katta bo'lmasligi kerak",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def _decode_and_normalize_photo(contents: bytes) -> tuple[bytes, str]:
-    """Rasmni dekodlaydi (soxta/buzuq faylni rad etish uchun) va HEIC/HEIF
-    bo'lsa JPEG'ga konvertatsiya qiladi. Pillow'ning dekodlash/konvertatsiya
+    """Rasmni dekodlaydi (soxta/buzuq faylni rad etish uchun), HEIC/HEIF bo'lsa
+    JPEG'ga konvertatsiya qiladi va EXIF metadatani (masalan GPS koordinatalari)
+    tozalash uchun har doim qayta kodlaydi. Pillow'ning dekodlash/konvertatsiya
     ishi CPU-bog'liq bo'lgani uchun bu funksiya asyncio.to_thread orqali
     alohida oqimda chaqiriladi — aks holda katta rasm butun event loop'ni
     (shu jumladan Telegram webhook so'rovlarini ham) bloklab qo'yardi."""
@@ -54,10 +79,24 @@ def _decode_and_normalize_photo(contents: bytes) -> tuple[bytes, str]:
     if fmt in ("HEIF", "HEIC"):
         # iPhone'lar odatda HEIC formatida suratga oladi — brauzerlar buni
         # ko'rsata olmaydi, shu sabab JPEG'ga konvertatsiya qilib saqlaymiz.
-        buffer = io.BytesIO()
-        img.convert("RGB").save(buffer, format="JPEG", quality=90)
-        contents = buffer.getvalue()
         fmt = "JPEG"
+
+    if fmt not in ALLOWED_IMAGE_FORMATS:
+        return contents, fmt  # chaqiruvchi buni rad etadi (400) — qayta kodlashning hojati yo'q
+
+    # EXIF (GPS, qurilma modeli va h.k.) hamda rasm ma'lumotidan keyin
+    # qo'shib yuborilishi mumkin bo'lgan har qanday yashirin baytlarni olib
+    # tashlash uchun rasmni PIL orqali qayta kodlaymiz — `exif=` parametri
+    # berilmagani sababli Pillow uni natijaga ko'chirmaydi. Avval bu faqat
+    # HEIC uchun bajarilardi, JPEG/PNG/WEBP esa asl baytlari bilan (EXIF'i
+    # saqlangan holda) yozilardi.
+    if fmt == "JPEG" and img.mode in ("RGBA", "P", "LA"):
+        # JPEG shaffoflikni (alpha kanalni) qo'llab-quvvatlamaydi.
+        img = img.convert("RGB")
+    buffer = io.BytesIO()
+    save_kwargs = {"quality": 92} if fmt == "JPEG" else {}
+    img.save(buffer, format=fmt, **save_kwargs)
+    contents = buffer.getvalue()
 
     return contents, fmt
 
@@ -213,7 +252,7 @@ async def upload_photo(
     if len(listing.photos) >= MAX_PHOTOS_PER_LISTING:
         raise HTTPException(status_code=400, detail=f"Ko'pi bilan {MAX_PHOTOS_PER_LISTING} ta rasm yuklash mumkin")
 
-    contents = await file.read()
+    contents = await _read_upload_within_limit(file, MAX_PHOTO_SIZE_BYTES)
     try:
         contents, fmt = await asyncio.to_thread(_decode_and_normalize_photo, contents)
     except ValueError:
@@ -343,7 +382,16 @@ async def delete_listing(
     if listing.user_id != user.id and not is_admin_user(user.telegram_id):
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
 
+    photo_paths = [p.file_path for p in listing.photos]
+
     await delete_channel_post(listing)
     db.delete(listing)
     db.commit()
+
+    # DB yozuvi o'chgandan keyin saqlash joyidagi (R2/disk) haqiqiy fayllarni
+    # ham tozalaymiz — aks holda ular abadiy "etim" bo'lib qolib, bepul disk/R2
+    # sig'imini asossiz to'ldirib boradi.
+    for path in photo_paths:
+        await asyncio.to_thread(delete_photo, path)
+
     return {"ok": True}
