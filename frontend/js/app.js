@@ -349,7 +349,11 @@ async function openDetail(id) {
   lastOpenedListingId = id;
   showView("detail");
   const content = document.getElementById("detailContent");
+  const editWrap = document.getElementById("detailEditWrap");
+  const deleteWrap = document.getElementById("detailDeleteWrap");
   content.innerHTML = "<p>Yuklanmoqda...</p>";
+  editWrap.innerHTML = "";
+  deleteWrap.innerHTML = "";
 
   try {
     const l = await api(`/api/listings/${id}`);
@@ -382,18 +386,25 @@ async function openDetail(id) {
       </div>
       ${l.description ? `<div class="detail-desc">${escapeHtml(l.description)}</div>` : ""}
       ${
-        isOwner
-          ? `<div class="owner-actions">
-               ${l.status !== "sold" ? `<button class="success" id="markSold">Sotildi deb belgilash</button>` : ""}
-               ${me.is_admin ? `<button id="editListing">Tahrirlash</button>` : ""}
-               <button class="danger" id="deleteListing">O'chirish</button>
-             </div>`
-          : `
-             ${l.contact_phone ? `<a class="contact-btn" href="tel:${escapeHtml(l.contact_phone)}">📞 Sotuvchiga qo'ng'iroq qilish</a>` : ""}
-             ${me.is_admin ? `<div class="owner-actions"><button id="editListing">Tahrirlash</button><button class="danger" id="deleteListing">O'chirish (admin)</button></div>` : ""}
-            `
+        !isOwner && l.contact_phone
+          ? `<a class="contact-btn" href="tel:${escapeHtml(l.contact_phone)}">📞 Sotuvchiga qo'ng'iroq qilish</a>`
+          : ""
       }
     `;
+
+    editWrap.innerHTML = me.is_admin
+      ? `<button class="edit-btn" id="editListing">
+           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 20h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+           Tahrirlash
+         </button>`
+      : "";
+
+    deleteWrap.innerHTML = canDelete
+      ? `<button class="delete-btn" id="deleteListing">
+           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+           ${isOwner ? "O'chirish" : "O'chirish (admin)"}
+         </button>`
+      : "";
 
     if (l.photos?.length) {
       content.querySelectorAll(".detail-gallery img").forEach((img) => {
@@ -401,17 +412,6 @@ async function openDetail(id) {
       });
     }
 
-    if (isOwner) {
-      document.getElementById("markSold")?.addEventListener("click", async () => {
-        try {
-          await api(`/api/listings/${id}`, { method: "PATCH", body: { status: "sold" } });
-          showToast("E'lon sotilgan deb belgilandi");
-          openDetail(id);
-        } catch (e) {
-          showToast(e.message);
-        }
-      });
-    }
     if (me.is_admin) {
       document.getElementById("editListing")?.addEventListener("click", () => openEditForm(l));
     }
