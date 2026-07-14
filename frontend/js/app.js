@@ -298,7 +298,14 @@ async function loadFeed() {
   await fetchFeedPage();
 }
 
-document.getElementById("btnFilter").addEventListener("click", loadFeed);
+document.getElementById("btnFilter").addEventListener("click", () => {
+  // Qidirish boshlanganda qo'shimcha parametrlar bo'limini yopamiz — foydalanuvchi
+  // natijalarni ko'rishi kerak, forma ochiq turishi shart emas.
+  advancedFiltersEl.classList.remove("advanced-filters--open");
+  btnAdvancedToggle.classList.remove("search-box__adv-btn--active");
+  btnAdvancedToggle.setAttribute("aria-expanded", "false");
+  loadFeed();
+});
 
 document.getElementById("btnLoadMore").addEventListener("click", () => {
   feedSegmentCount = 0;
