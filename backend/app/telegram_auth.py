@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import json
 import os
+import time
 from urllib.parse import parse_qsl
 
 from fastapi import Header, HTTPException
@@ -17,6 +18,12 @@ from fastapi import Header, HTTPException
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 # Lokal test paytida frontendni haqiqiy Telegramsiz tekshirish uchun (productionda albatta False qiling!)
 SKIP_TELEGRAM_VALIDATION = os.getenv("SKIP_TELEGRAM_VALIDATION", "false").lower() == "true"
+# initData shu muddatdan eski bo'lsa rad etiladi — aks holda bir marta oshkor
+# bo'lgan (masalan brauzer tarixi, log, ekran surati orqali) initData imzosi
+# haqiqiy bo'lgani uchun ABADIY amal qilib qolardi (replay xavfi). Mini App
+# odatda ochib-yopib ishlatiladi, shuning uchun 24 soat amaliyotda foydalanuvchiga
+# deyarli sezilmaydi.
+INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60
 
 
 def validate_init_data(init_data: str) -> dict:
@@ -41,6 +48,10 @@ def validate_init_data(init_data: str) -> dict:
 
     if not hmac.compare_digest(computed_hash, received_hash):
         raise HTTPException(status_code=401, detail="initData tasdiqlanmadi")
+
+    auth_date = parsed.get("auth_date")
+    if not auth_date or time.time() - int(auth_date) > INIT_DATA_MAX_AGE_SECONDS:
+        raise HTTPException(status_code=401, detail="initData muddati tugagan, ilovani qayta oching")
 
     user_raw = parsed.get("user")
     if not user_raw:
