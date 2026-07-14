@@ -91,26 +91,6 @@ def delete_photo(file_path: str) -> None:
         logger.exception("Diskdan rasmni o'chirishda xatolik: %s", filepath)
 
 
-def list_all_filenames() -> set[str]:
-    """Saqlash joyida (R2 bucket yoki lokal `uploads/` papka) hozir turgan
-    barcha fayl nomlarini qaytaradi. Fayl nomlari uuid bo'lgani uchun qo'lda
-    ko'zdan kechirib solishtirish amaliy emas — bu funksiya diagnostika
-    skriptlarida (masalan etim/o'chirilmagan fayllarni topish) DBdagi
-    Photo.file_path'lar bilan avtomatik solishtirish uchun ishlatiladi."""
-    if R2_ENABLED:
-        filenames: set[str] = set()
-        paginator = _client.get_paginator("list_objects_v2")
-        for page in paginator.paginate(Bucket=R2_BUCKET_NAME):
-            for obj in page.get("Contents", []):
-                filenames.add(obj["Key"])
-        return filenames
-
-    return {
-        name for name in os.listdir(UPLOAD_DIR)
-        if os.path.isfile(os.path.join(UPLOAD_DIR, name))
-    }
-
-
 def resolve_url(file_path: str, base_url: str) -> str:
     """`file_path` allaqachon to'liq URL bo'lsa (R2 rejimi) o'zini, aks holda
     (eski/lokal nisbiy `/uploads/...` yo'l) uni `base_url` bilan birlashtirib
