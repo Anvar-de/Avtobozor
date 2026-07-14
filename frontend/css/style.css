@@ -574,19 +574,19 @@ input[type="number"]::-webkit-inner-spin-button {
 .refresh-fab {
   position: fixed;
   right: max(8px, calc((100vw - 480px) / 2 + 8px));
-  bottom: 53px;
+  bottom: 55px;
   z-index: 16;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: none;
   background: none;
-  color: var(--text-muted);
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.refresh-fab:active { color: var(--text); transform: rotate(-50deg); }
+.refresh-fab:active { color: var(--accent); transform: rotate(-50deg); }
 .refresh-fab[hidden] { display: none; }
 
 /* ---------- Toast ---------- */
