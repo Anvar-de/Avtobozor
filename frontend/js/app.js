@@ -127,7 +127,9 @@ function showView(name) {
   Object.entries(views).forEach(([key, el]) => (el.hidden = key !== name));
   // "create", "my" va "detail" sahifalarida pastki suzuvchi "E'lon berish"
   // tugmasi yashiriladi — bu sahifalarda o'zining ichki tugmalar qatori bor.
-  document.getElementById("btnCreate").hidden = ["create", "my", "detail"].includes(name);
+  const hideBottomBtns = ["create", "my", "detail"].includes(name);
+  document.getElementById("btnCreate").hidden = hideBottomBtns;
+  document.getElementById("btnRefreshFeed").hidden = hideBottomBtns;
   window.scrollTo(0, 0);
 }
 
@@ -301,6 +303,21 @@ async function loadFeed() {
 document.getElementById("btnFilter").addEventListener("click", () => {
   // Qidirish boshlanganda qo'shimcha parametrlar bo'limini yopamiz — foydalanuvchi
   // natijalarni ko'rishi kerak, forma ochiq turishi shart emas.
+  advancedFiltersEl.classList.remove("advanced-filters--open");
+  btnAdvancedToggle.classList.remove("search-box__adv-btn--active");
+  btnAdvancedToggle.setAttribute("aria-expanded", "false");
+  loadFeed();
+});
+
+document.getElementById("btnRefreshFeed").addEventListener("click", () => {
+  // Qidiruv parametrlarini tozalab, ro'yxatni boshidan yuklaymiz.
+  document.getElementById("fSearch").value = "";
+  document.getElementById("fYearMin").value = "";
+  document.getElementById("fYearMax").value = "";
+  document.getElementById("fMileageMin").value = "";
+  document.getElementById("fMileageMax").value = "";
+  document.getElementById("fPriceMin").value = "";
+  document.getElementById("fPriceMax").value = "";
   advancedFiltersEl.classList.remove("advanced-filters--open");
   btnAdvancedToggle.classList.remove("search-box__adv-btn--active");
   btnAdvancedToggle.setAttribute("aria-expanded", "false");

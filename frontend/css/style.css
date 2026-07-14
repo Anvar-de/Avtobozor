@@ -570,6 +570,25 @@ input[type="number"]::-webkit-inner-spin-button {
 .bottom-btn:active { filter: brightness(0.92); }
 .bottom-btn[hidden] { display: none; }
 
+/* ---------- Ro'yxatni yangilash tugmasi (E'lon berish tugmasi ustida, o'ng tomonda) ---------- */
+.refresh-fab {
+  position: fixed;
+  right: max(8px, calc((100vw - 480px) / 2 + 8px));
+  bottom: 53px;
+  z-index: 16;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.refresh-fab:active { color: var(--text); transform: rotate(-50deg); }
+.refresh-fab[hidden] { display: none; }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
