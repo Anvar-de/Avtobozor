@@ -25,6 +25,26 @@ from shared.database import Base, engine
 from .rate_limit import limiter
 from .routers import auth, listings, meta
 from .telegram_bot import bot, dp, setup_menu_button, resolve_bot_username
+from .telegram_auth import SKIP_TELEGRAM_VALIDATION
+
+# Render bunday muhit o'zgaruvchisini avtomatik beradi (masalan
+# "https://sizning-servis.onrender.com"). Boshqa hostingda buni qo'lda
+# PUBLIC_URL sifatida sozlang. Shu o'zgaruvchining borligi "biz haqiqiy
+# (production) serverda ishlayapmiz" degani — lokal ishga tushirishda bo'lmaydi.
+PUBLIC_URL = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("PUBLIC_URL")
+
+# SKIP_TELEGRAM_VALIDATION Telegram initData imzosini butunlay o'chirib,
+# so'rovchi o'zi aytgan har qanday telegram_id'ni (jumladan ADMIN_CHAT_ID'ni)
+# haqiqiy deb qabul qiladi — faqat lokal testda ishlatilishi mumkin. Production
+# muhitida yoqilgan bo'lsa, ilova umuman ishga tushmasin (jimgina noto'g'ri
+# sozlanib qolib, admin huquqini kimdir o'zlashtirib olmasligi uchun).
+if PUBLIC_URL and SKIP_TELEGRAM_VALIDATION:
+    raise RuntimeError(
+        "SKIP_TELEGRAM_VALIDATION=true production muhitida (PUBLIC_URL/RENDER_EXTERNAL_URL "
+        "sozlangan) ishlatib bo'lmaydi — bu Telegram initData imzosini tekshirmay, istalgan "
+        "foydalanuvchini (jumladan o'zini admin qilib) qabul qilishga imkon beradi. "
+        ".env faylida SKIP_TELEGRAM_VALIDATION=false qiling yoki uni butunlay olib tashlang."
+    )
 
 # Jadvallarni yaratish (production'da Alembic migratsiya ishlatish tavsiya etiladi)
 Base.metadata.create_all(bind=engine)
@@ -117,13 +137,9 @@ async def set_telegram_webhook():
         return
     await resolve_bot_username()  # kanal xabaridagi tugma uchun bot @username'ini oladi
 
-    # Render bunday muhit o'zgaruvchisini avtomatik beradi (masalan
-    # "https://sizning-servis.onrender.com"). Boshqa hostingda buni qo'lda
-    # PUBLIC_URL sifatida sozlang.
-    public_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("PUBLIC_URL")
-    if not public_url:
+    if not PUBLIC_URL:
         return  # lokal test paytida webhook o'rnatilmaydi — bot/bot.py orqali polling ishlating
-    await bot.set_webhook(f"{public_url}{WEBHOOK_PATH}")
+    await bot.set_webhook(f"{PUBLIC_URL}{WEBHOOK_PATH}")
     await setup_menu_button()
 
 
