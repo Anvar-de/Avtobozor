@@ -76,7 +76,9 @@ async function api(path, { method = "GET", body, isForm = false } = {}) {
 // ============================================================
 // Yordamchi funksiyalar
 // ============================================================
-function formatPrice(n) {
+const CURRENCY_LABELS = { USD: "$", UZS: "so'm" };
+function formatPrice(n, currency = "USD") {
+  if (currency === "UZS") return new Intl.NumberFormat("uz-UZ").format(n) + " so'm";
   return "$" + new Intl.NumberFormat("en-US").format(n);
 }
 // Rasm manzili R2/CDN'dan to'liq URL ("https://...") yoki eski/lokal nisbiy
@@ -172,7 +174,7 @@ function renderCard(listing, { showStatus = false } = {}) {
     </div>
     <div class="card__body">
       <div class="card__title">${escapeHtml(listing.brand)} ${escapeHtml(listing.model)}, ${listing.year}</div>
-      <div class="card__price">${formatPrice(listing.price)}</div>
+      <div class="card__price">${formatPrice(listing.price, listing.currency)}</div>
       <div class="card__row">
         <span class="odo">${formatKm(listing.mileage)}</span>
       </div>
@@ -234,6 +236,11 @@ function feedParams() {
   const priceMax = numericFieldValue("fPriceMax");
   if (priceMin) params.set("min_price", priceMin);
   if (priceMax) params.set("max_price", priceMax);
+  // Backend shu valyutadagi oraliqni boshqa valyutaga o'girib, ikkalasini ham
+  // qidiradi (bir xil kurs asosida) — narxning o'zi hech qachon o'zgartirilmaydi.
+  if (priceMin || priceMax) {
+    params.set("price_currency", document.getElementById("fCurrencyMin").dataset.currency);
+  }
 
   return params;
 }
@@ -374,7 +381,7 @@ async function openDetail(id) {
     content.innerHTML = `
       ${gallery}
       <div class="detail-title">${escapeHtml(l.brand)} ${escapeHtml(l.model)}</div>
-      <div class="detail-price">${formatPrice(l.price)}</div>
+      <div class="detail-price">${formatPrice(l.price, l.currency)}</div>
       <div class="detail-specs">
         <div class="spec"><div class="spec__label">Yili</div><div class="spec__value">${l.year}</div></div>
         <div class="spec"><div class="spec__label">Probeg</div><div class="spec__value">${formatKm(l.mileage)}</div></div>
@@ -530,6 +537,10 @@ function startCreateFlow() {
   resetCreateFormState();
   document.getElementById("createForm").reset();
   resetDistrictSelect();
+  // form.reset() faqat name= atributli maydonlarni tozalaydi — valyuta tugmasi
+  // alohida holat sifatida saqlangani uchun standart holatga qo'lda qaytariladi.
+  document.getElementById("cCurrencyToggle").dataset.currency = "USD";
+  document.getElementById("cCurrencyToggle").textContent = CURRENCY_LABELS.USD;
   showView("create");
 }
 
@@ -545,6 +556,9 @@ function openEditForm(listing) {
   form.year.value = listing.year || "";
   document.getElementById("cMileage").value = listing.mileage ? new Intl.NumberFormat("uz-UZ").format(listing.mileage) : "";
   document.getElementById("cPrice").value = listing.price ? new Intl.NumberFormat("uz-UZ").format(listing.price) : "";
+  const currency = listing.currency || "USD";
+  document.getElementById("cCurrencyToggle").dataset.currency = currency;
+  document.getElementById("cCurrencyToggle").textContent = CURRENCY_LABELS[currency];
   form.transmission.value = listing.transmission || "";
   form.fuel_type.value = listing.fuel_type || "";
   form.region.value = listing.region || "";
@@ -707,6 +721,37 @@ attachThousandsFormatter(document.getElementById("fMileageMax"));
 attachThousandsFormatter(document.getElementById("fPriceMin"));
 attachThousandsFormatter(document.getElementById("fPriceMax"));
 
+// ============================================================
+// Narx maydonlaridagi "$ / so'm" valyuta tugmasi
+// ============================================================
+// E'lon berish formasi: bitta maydon, bitta tugma. Valyuta almashtirilganda
+// avvalgi kiritilgan raqam ma'nosiz bo'lib qolmasligi uchun maydon tozalanadi
+// (masalan so'mda "200 000 000" kiritilgan bo'lsa, dollarga o'tkazilganda shu
+// raqamning o'zi qolib ketmasligi kerak).
+const cCurrencyToggle = document.getElementById("cCurrencyToggle");
+cCurrencyToggle.addEventListener("click", () => {
+  const next = cCurrencyToggle.dataset.currency === "USD" ? "UZS" : "USD";
+  cCurrencyToggle.dataset.currency = next;
+  cCurrencyToggle.textContent = CURRENCY_LABELS[next];
+  document.getElementById("cPrice").value = "";
+});
+
+// Qidiruv filtri: "dan" va "gacha" ikkalasida ham tugma bor, lekin ular bitta
+// umumiy valyuta holatini boshqaradi — qaysi birida bossa ham ikkalasi ham
+// birga almashadi, ikkalasi ham tozalanadi.
+const fCurrencyMin = document.getElementById("fCurrencyMin");
+const fCurrencyMax = document.getElementById("fCurrencyMax");
+function setSearchPriceCurrency(next) {
+  [fCurrencyMin, fCurrencyMax].forEach((btn) => {
+    btn.dataset.currency = next;
+    btn.textContent = CURRENCY_LABELS[next];
+  });
+  document.getElementById("fPriceMin").value = "";
+  document.getElementById("fPriceMax").value = "";
+}
+fCurrencyMin.addEventListener("click", () => setSearchPriceCurrency(fCurrencyMin.dataset.currency === "USD" ? "UZS" : "USD"));
+fCurrencyMax.addEventListener("click", () => setSearchPriceCurrency(fCurrencyMax.dataset.currency === "USD" ? "UZS" : "USD"));
+
 document.getElementById("createForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target;
@@ -718,6 +763,7 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     year: Number(fd.get("year")),
     mileage: Number(String(fd.get("mileage")).replace(/\D/g, "")),
     price: Number(String(fd.get("price")).replace(/\D/g, "")),
+    currency: cCurrencyToggle.dataset.currency,
     transmission: fd.get("transmission") || null,
     fuel_type: fd.get("fuel_type") || null,
     region: fd.get("region") || null,

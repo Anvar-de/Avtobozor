@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import (
-    Column, Integer, BigInteger, String, Float, Text, Boolean,
+    Column, Integer, BigInteger, String, Float, Numeric, Text, Boolean,
     DateTime, ForeignKey, Enum
 )
 from sqlalchemy.orm import relationship
@@ -39,7 +39,8 @@ class Listing(Base):
     brand = Column(String, nullable=False)          # Chevrolet, Nexia...
     model = Column(String, nullable=False)           # Cobalt, Malibu...
     year = Column(Integer, nullable=False)
-    price = Column(Float, nullable=False)            # dollarda ($)
+    price = Column(Float, nullable=False)            # `currency` maydonidagi valyutada
+    currency = Column(String, nullable=False, default="USD")  # "USD" yoki "UZS"
     mileage = Column(Integer, nullable=False)         # km
     transmission = Column(String, nullable=True)      # avtomat / mexanika
     fuel_type = Column(String, nullable=True)         # benzin / gaz / dizel / gibrid
@@ -70,3 +71,14 @@ class Photo(Base):
     position = Column(Integer, default=0)         # galereyadagi tartib
 
     listing = relationship("Listing", back_populates="photos")
+
+
+class ExchangeRate(Base):
+    """CBU'dan kunlik olinadigan USD/UZS kursi — faqat valyutalararo qidiruv/filtr
+    uchun ichkarida ishlatiladi, e'lon narxini ko'rsatishda hech qachon
+    ishlatilmaydi (narx doim o'z asl valyutasida ko'rsatiladi)."""
+    __tablename__ = "exchange_rates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usd_to_uzs = Column(Numeric(14, 2), nullable=False)  # 1 USD necha so'm
+    fetched_at = Column(DateTime, default=datetime.utcnow, nullable=False)

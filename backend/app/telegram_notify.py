@@ -4,6 +4,7 @@ import os
 
 from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup
 
+from shared.currency import format_price
 from shared.regions import format_location
 from shared.storage import resolve_url
 
@@ -40,7 +41,7 @@ async def notify_admin_new_listing(listing) -> None:
     lines = [
         f"🚗 Yangi e'lon: #{listing.id}",
         f"{_e(listing.brand)} {_e(listing.model)}, {listing.year}",
-        f"Narxi: ${listing.price:,.0f}",
+        f"Narxi: {format_price(listing.price, listing.currency)}",
         f"Probeg: {listing.mileage:,} km",
         f"Manzil: {_e(format_location(listing.region, listing.district)) or '-'}",
         owner_line,

@@ -19,6 +19,7 @@ from aiogram.types import (
     MenuButtonWebApp, InputMediaPhoto, BufferedInputFile,
 )
 
+from shared.currency import format_price
 from shared.database import SessionLocal
 from shared.models import Listing, ListingStatus, User
 from shared.regions import format_location
@@ -187,7 +188,7 @@ async def post_to_channel(listing: Listing) -> list[int] | None:
     caption_lines = [
         f"🚗 <b>{_e(listing.brand)} {_e(listing.model)}</b>",
         "",
-        f"💰 <b>${listing.price:,.0f}</b>",
+        f"💰 <b>{format_price(listing.price, listing.currency)}</b>",
         f"📅 {listing.year}",
         f"🛣 {listing.mileage:,} km".replace(",", " "),
     ]

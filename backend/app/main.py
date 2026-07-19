@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import secrets
@@ -22,6 +23,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import inspect, text
 
 from shared.database import Base, engine
+from shared.exchange_rate import daily_refresh_loop
 from .rate_limit import limiter
 from .routers import auth, listings, meta
 from .telegram_bot import bot, dp, setup_menu_button, resolve_bot_username
@@ -64,6 +66,9 @@ if "listings" in _inspector.get_table_names():
     if "channel_message_ids" not in _existing_columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE listings ADD COLUMN channel_message_ids VARCHAR"))
+    if "currency" not in _existing_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE listings ADD COLUMN currency VARCHAR NOT NULL DEFAULT 'USD'"))
 
 app = FastAPI(title="Avto E'lonlar Mini App API")
 
@@ -129,6 +134,13 @@ async def telegram_webhook(request: Request):
     update = Update.model_validate(data, context={"bot": bot})
     await dp.feed_update(bot, update)
     return {"ok": True}
+
+
+@app.on_event("startup")
+async def start_exchange_rate_loop():
+    # Alohida fon vazifasi sifatida ishga tushiriladi — CBU'ga so'rov yuborish
+    # (yoki uning muvaffaqiyatsizligi) asosiy so'rovlarni bloklamasligi kerak.
+    asyncio.create_task(daily_refresh_loop())
 
 
 @app.on_event("startup")

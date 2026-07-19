@@ -1,16 +1,17 @@
 import asyncio
 import io
+import math
 import uuid
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile, File, Query
 from PIL import Image
 from pillow_heif import register_heif_opener
-from sqlalchemy import String, cast, or_
+from sqlalchemy import String, and_, cast, or_
 from sqlalchemy.orm import Session, joinedload
 
 from shared.database import SessionLocal, get_db
-from shared.models import Listing, Photo, ListingStatus
+from shared.models import ExchangeRate, Listing, Photo, ListingStatus
 from shared.storage import save_photo, delete_photo
 from ..rate_limit import limiter
 from ..telegram_auth import get_telegram_user
@@ -101,6 +102,40 @@ def _decode_and_normalize_photo(contents: bytes) -> tuple[bytes, str]:
     return contents, fmt
 
 
+def _price_filter(db: Session, currency: str, min_price: Optional[float], max_price: Optional[float]):
+    """Narx filtrini quradi — foydalanuvchi qidirgan valyutadagi e'lonlar ANIQ
+    oraliqda, boshqa valyutadagi e'lonlar esa CBU'dan kunlik olingan kursga
+    asoslanib o'girilgan (tashqariga qarab yaxlitilangan) oraliqda qidiriladi.
+    Narxning o'zi hech qachon o'zgartirilmaydi/ko'rsatilmaydi — bu faqat
+    qidiruv uchun ichkarida ishlatiladi.
+
+    Agar hali birorta kurs saqlanmagan bo'lsa (cold-start), faqat qidirilgan
+    valyutadagi e'lonlar bilan cheklanadi — konvertatsiya qilib bo'lmaydi."""
+    same_currency_conditions = [Listing.currency == currency]
+    if min_price is not None:
+        same_currency_conditions.append(Listing.price >= min_price)
+    if max_price is not None:
+        same_currency_conditions.append(Listing.price <= max_price)
+
+    latest_rate = (
+        db.query(ExchangeRate).order_by(ExchangeRate.fetched_at.desc()).first()
+    )
+    if latest_rate is None:
+        return and_(*same_currency_conditions)
+
+    rate = float(latest_rate.usd_to_uzs)
+    other_currency = "UZS" if currency == "USD" else "USD"
+    to_other = (lambda x: x * rate) if currency == "USD" else (lambda x: x / rate)
+
+    other_currency_conditions = [Listing.currency == other_currency]
+    if min_price is not None:
+        other_currency_conditions.append(Listing.price >= math.floor(to_other(min_price)))
+    if max_price is not None:
+        other_currency_conditions.append(Listing.price <= math.ceil(to_other(max_price)))
+
+    return or_(and_(*same_currency_conditions), and_(*other_currency_conditions))
+
+
 @router.get("", response_model=list[ListingOut])
 @limiter.limit("60/minute")
 def list_listings(
@@ -112,6 +147,7 @@ def list_listings(
     district: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
+    price_currency: str = Query("USD", pattern="^(USD|UZS)$"),
     min_year: Optional[int] = None,
     max_year: Optional[int] = None,
     min_mileage: Optional[int] = None,
@@ -149,10 +185,8 @@ def list_listings(
         q = q.filter(Listing.region.ilike(f"%{region}%"))
     if district:
         q = q.filter(Listing.district.ilike(f"%{district}%"))
-    if min_price is not None:
-        q = q.filter(Listing.price >= min_price)
-    if max_price is not None:
-        q = q.filter(Listing.price <= max_price)
+    if min_price is not None or max_price is not None:
+        q = q.filter(_price_filter(db, price_currency, min_price, max_price))
     if min_year is not None:
         q = q.filter(Listing.year >= min_year)
     if max_year is not None:

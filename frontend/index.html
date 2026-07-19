@@ -9,7 +9,7 @@
      eski keshlangan faylni ko'raveradi. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=29" />
+<link rel="stylesheet" href="css/style.css?v=30" />
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -65,11 +65,17 @@
               </div>
             </div>
             <div class="advanced-filters__row">
-              <span class="advanced-filters__label">Narxi, $</span>
+              <span class="advanced-filters__label">Narxi</span>
               <div class="advanced-filters__inputs">
-                <input class="chip-input" id="fPriceMin" type="text" inputmode="numeric" autocomplete="off" placeholder="dan" />
+                <div class="price-input">
+                  <input class="chip-input" id="fPriceMin" type="text" inputmode="numeric" autocomplete="off" placeholder="dan" />
+                  <button type="button" class="currency-toggle" id="fCurrencyMin" data-currency="UZS">so'm</button>
+                </div>
                 <span class="advanced-filters__sep">—</span>
-                <input class="chip-input" id="fPriceMax" type="text" inputmode="numeric" autocomplete="off" placeholder="gacha" />
+                <div class="price-input">
+                  <input class="chip-input" id="fPriceMax" type="text" inputmode="numeric" autocomplete="off" placeholder="gacha" />
+                  <button type="button" class="currency-toggle" id="fCurrencyMax" data-currency="UZS">so'm</button>
+                </div>
               </div>
             </div>
           </div>
@@ -128,7 +134,12 @@
       <div class="form-row form-row--3">
         <label>Yili *<input required name="year" type="number" min="1970" max="2027" placeholder="2021" /></label>
         <label>Probeg, km *<input required name="mileage" id="cMileage" type="text" inputmode="numeric" autocomplete="off" placeholder="45 000" /></label>
-        <label>Narxi, $ *<input required name="price" id="cPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="12 000" /></label>
+        <label>Narxi *
+          <div class="price-input">
+            <input required name="price" id="cPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="12 000" />
+            <button type="button" class="currency-toggle" id="cCurrencyToggle" data-currency="USD">$</button>
+          </div>
+        </label>
       </div>
       <div class="form-row">
         <label>Uzatma
@@ -201,6 +212,6 @@
   <button class="lightbox__nav lightbox__nav--next" id="lightboxNext" aria-label="Keyingi rasm">›</button>
 </div>
 
-<script src="js/app.js?v=23"></script>
+<script src="js/app.js?v=24"></script>
 </body>
 </html>
