@@ -799,6 +799,10 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
   }
 
   const photoInput = document.getElementById("photoInput");
+  if (photoInput.files.length === 0) {
+    showToast("Kamida 1 ta rasm yuklashingiz kerak");
+    return;
+  }
   if (photoInput.files.length > MAX_PHOTOS) {
     showToast(`Ko'pi bilan ${MAX_PHOTOS} ta rasm yuklash mumkin`);
     return;

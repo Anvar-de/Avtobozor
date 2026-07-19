@@ -357,6 +357,8 @@ async def submit_listing(
         raise HTTPException(status_code=404, detail="E'lon topilmadi")
     if listing.user_id != user.id:
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
+    if not listing.photos:
+        raise HTTPException(status_code=400, detail="Kamida 1 ta rasm yuklashingiz kerak")
 
     background_tasks.add_task(_notify_admin_background, listing.id)
     return listing
