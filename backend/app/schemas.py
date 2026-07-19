@@ -6,11 +6,9 @@ from shared.models import ListingStatus
 
 CURRENT_YEAR = datetime.now().year
 
-# Narxning yuqori sanity-chegarasi — valyutaga qarab boshqacha, chunki 10 million
-# so'm mashinaning narxi bo'la olmaydi, lekin 10 million dollar (o'ta keng
-# zaxira bilan) bo'lishi mumkin. Bu qattiq biznes qoidasi emas, faqat
-# nomuvofiq/xato kiritilgan qiymatlarni ushlab qolish uchun keng chegara.
-MAX_PRICE_BY_CURRENCY = {"USD": 10_000_000, "UZS": 150_000_000_000}
+# Narxning yuqori chegarasi — valyutaga qarab boshqacha. Real bozor narxiga mos
+# qat'iy biznes qoidasi (foydalanuvchi shundan ko'proq narx kirita olmaydi).
+MAX_PRICE_BY_CURRENCY = {"USD": 300_000, "UZS": 4_000_000_000}
 
 
 class PhotoOut(BaseModel):

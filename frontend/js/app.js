@@ -78,6 +78,8 @@ async function api(path, { method = "GET", body, isForm = false } = {}) {
 // ============================================================
 const CURRENCY_LABELS = { USD: "$", UZS: "so'm" };
 const PRICE_PLACEHOLDERS = { USD: "12 000", UZS: "120 000 000" };
+// backend/app/schemas.py'dagi MAX_PRICE_BY_CURRENCY bilan mos bo'lishi shart.
+const MAX_PRICE_BY_CURRENCY = { USD: 300_000, UZS: 4_000_000_000 };
 function formatPrice(n, currency = "USD") {
   if (currency === "UZS") return new Intl.NumberFormat("uz-UZ").format(n) + " so'm";
   return "$" + new Intl.NumberFormat("en-US").format(n);
@@ -702,10 +704,17 @@ document.addEventListener("click", (e) => {
 
 // Foydalanuvchi kiritayotgan raqamni minglik bo'laklarga ajratib ko'rsatadi
 // (masalan "5287400" -> "5 287 400"), shu bilan birga kursor pozitsiyasini saqlaydi.
-function attachThousandsFormatter(input) {
+// `getMax` berilsa, foydalanuvchi shu chegaradan katta son kirita olmaydi —
+// qiymat chegaraga avtomatik qisqartiriladi (masalan narx maydonida valyutaga
+// mos maksimal narxdan oshirib yozib bo'lmasin deb).
+function attachThousandsFormatter(input, getMax) {
   input.addEventListener("input", () => {
     const digitsBeforeCursor = input.value.slice(0, input.selectionStart).replace(/\D/g, "").length;
-    const digits = input.value.replace(/\D/g, "");
+    let digits = input.value.replace(/\D/g, "");
+    const max = getMax?.();
+    if (max != null && digits && Number(digits) > max) {
+      digits = String(max);
+    }
     input.value = digits ? new Intl.NumberFormat("uz-UZ").format(Number(digits)) : "";
 
     let pos = 0;
@@ -718,7 +727,10 @@ function attachThousandsFormatter(input) {
   });
 }
 attachThousandsFormatter(document.getElementById("cMileage"));
-attachThousandsFormatter(document.getElementById("cPrice"));
+attachThousandsFormatter(
+  document.getElementById("cPrice"),
+  () => MAX_PRICE_BY_CURRENCY[document.getElementById("cCurrencyToggle").dataset.currency]
+);
 attachThousandsFormatter(document.getElementById("fMileageMin"));
 attachThousandsFormatter(document.getElementById("fMileageMax"));
 attachThousandsFormatter(document.getElementById("fPriceMin"));
@@ -776,6 +788,12 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     description: fd.get("description") || null,
     contact_phone: fd.get("contact_phone") || null,
   };
+
+  const maxPrice = MAX_PRICE_BY_CURRENCY[payload.currency];
+  if (payload.price > maxPrice) {
+    showToast(`Narx ${new Intl.NumberFormat("uz-UZ").format(maxPrice)} ${CURRENCY_LABELS[payload.currency]} dan katta bo'lmasligi kerak`);
+    return;
+  }
 
   const submitBtn = document.getElementById("btnSubmitCreate");
   const submitLabel = submitBtn.querySelector(".submit-btn__label");
