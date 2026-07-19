@@ -27,23 +27,42 @@ async def _fetch_usd_rate_once() -> Decimal:
     return Decimal(str(data[0]["Rate"]))
 
 
+def _store_rate(rate: Decimal) -> None:
+    db = SessionLocal()
+    try:
+        db.add(ExchangeRate(usd_to_uzs=rate))
+        db.commit()
+    finally:
+        db.close()
+
+
+def _has_any_rate() -> bool:
+    db = SessionLocal()
+    try:
+        return db.query(ExchangeRate).first() is not None
+    finally:
+        db.close()
+
+
 async def refresh_usd_rate() -> None:
     """CBU'dan USD kursini olib, `exchange_rates`ga yangi qator sifatida yozadi.
     Tarmoq/CBU vaqtincha ishlamasligi mumkinligi uchun bir necha marta (orasida
     kutib) urinadi. Barcha urinishlar muvaffaqiyatsiz bo'lsa, bazadagi eski
     kurs (bo'lsa) o'zgarishsiz qoladi — qidiruv o'sha eski kurs bilan davom
     etadi. Hech qachon xato ko'tarmaydi, shuning uchun chaqiruvchi (startup
-    yoki fon tsikli) doim davom etaveradi."""
+    yoki fon tsikli) doim davom etaveradi.
+
+    Baza chaqiruvlari (SQLAlchemy) sinxron/blocking bo'lgani uchun, bu funksiya
+    yagona asosiy event loop'da ishlaydigan fon vazifasi sifatida chaqirilsa
+    ham, ular asyncio.to_thread orqali alohida oqimda bajariladi — aks holda
+    baza sekinlashgan/uyg'onayotgan paytda (masalan Neon auto-suspend'dan
+    keyin) BUTUN ilova barcha foydalanuvchilar uchun bir necha soniyaga
+    bloklanib qolar edi."""
     last_error: Exception | None = None
     for attempt in range(1, FETCH_RETRIES + 1):
         try:
             rate = await _fetch_usd_rate_once()
-            db = SessionLocal()
-            try:
-                db.add(ExchangeRate(usd_to_uzs=rate))
-                db.commit()
-            finally:
-                db.close()
+            await asyncio.to_thread(_store_rate, rate)
             logger.info("USD/UZS kursi yangilandi: %s (urinish %d/%d)", rate, attempt, FETCH_RETRIES)
             return
         except Exception as exc:
@@ -52,11 +71,7 @@ async def refresh_usd_rate() -> None:
             if attempt < FETCH_RETRIES:
                 await asyncio.sleep(2 ** attempt)  # 2s, keyin 4s
 
-    db = SessionLocal()
-    try:
-        has_any_rate = db.query(ExchangeRate).first() is not None
-    finally:
-        db.close()
+    has_any_rate = await asyncio.to_thread(_has_any_rate)
     if not has_any_rate:
         # Bazada birorta ham kurs yo'q — bu oddiy "bir kunlik xato"dan jiddiyroq,
         # chunki valyutalararo qidiruv butunlay ishlamay qoladi (cold-start).
