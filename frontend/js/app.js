@@ -77,6 +77,7 @@ async function api(path, { method = "GET", body, isForm = false } = {}) {
 // Yordamchi funksiyalar
 // ============================================================
 const CURRENCY_LABELS = { USD: "$", UZS: "so'm" };
+const PRICE_PLACEHOLDERS = { USD: "12 000", UZS: "120 000 000" };
 function formatPrice(n, currency = "USD") {
   if (currency === "UZS") return new Intl.NumberFormat("uz-UZ").format(n) + " so'm";
   return "$" + new Intl.NumberFormat("en-US").format(n);
@@ -541,6 +542,7 @@ function startCreateFlow() {
   // alohida holat sifatida saqlangani uchun standart holatga qo'lda qaytariladi.
   document.getElementById("cCurrencyToggle").dataset.currency = "USD";
   document.getElementById("cCurrencyToggle").textContent = CURRENCY_LABELS.USD;
+  document.getElementById("cPrice").placeholder = PRICE_PLACEHOLDERS.USD;
   showView("create");
 }
 
@@ -559,6 +561,7 @@ function openEditForm(listing) {
   const currency = listing.currency || "USD";
   document.getElementById("cCurrencyToggle").dataset.currency = currency;
   document.getElementById("cCurrencyToggle").textContent = CURRENCY_LABELS[currency];
+  document.getElementById("cPrice").placeholder = PRICE_PLACEHOLDERS[currency];
   form.transmission.value = listing.transmission || "";
   form.fuel_type.value = listing.fuel_type || "";
   form.region.value = listing.region || "";
@@ -733,7 +736,9 @@ cCurrencyToggle.addEventListener("click", () => {
   const next = cCurrencyToggle.dataset.currency === "USD" ? "UZS" : "USD";
   cCurrencyToggle.dataset.currency = next;
   cCurrencyToggle.textContent = CURRENCY_LABELS[next];
-  document.getElementById("cPrice").value = "";
+  const priceInput = document.getElementById("cPrice");
+  priceInput.value = "";
+  priceInput.placeholder = PRICE_PLACEHOLDERS[next];
 });
 
 // Qidiruv filtri: "dan" va "gacha" ikkalasida ham tugma bor, lekin ular bitta
