@@ -332,7 +332,8 @@ async def start_handler(message: Message):
 @dp.message(Command("stats"))
 async def stats_handler(message: Message):
     """Faqat admin ishlata oladi: umumiy statistika."""
-    if ADMIN_CHAT_ID and str(message.from_user.id) != str(ADMIN_CHAT_ID):
+    from .routers.auth import is_admin_user
+    if not is_admin_user(message.from_user.id):
         return  # oddiy foydalanuvchiga hech narsa javob bermaymiz
 
     db = SessionLocal()
@@ -360,7 +361,8 @@ async def stats_handler(message: Message):
 
 @dp.callback_query(F.data.startswith("approve:") | F.data.startswith("reject:"))
 async def moderation_handler(callback: CallbackQuery):
-    if ADMIN_CHAT_ID and str(callback.from_user.id) != str(ADMIN_CHAT_ID):
+    from .routers.auth import is_admin_user
+    if not is_admin_user(callback.from_user.id):
         await callback.answer("Sizda ruxsat yo'q", show_alert=True)
         return
 
