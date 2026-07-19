@@ -494,14 +494,14 @@ input[type="number"]::-webkit-inner-spin-button {
 .form-row--3 { grid-template-columns: 1fr 1fr 1fr; }
 
 /* Narx maydoni ichidagi "$ / so'm" valyuta tugmasi — .search-box__adv-btn bilan
-   bir xil naqsh: maydonga padding-right bilan joy ochiladi, tugma shu joyga
+   bir xil naqsh: maydonga padding-left bilan joy ochiladi, tugma shu joyga
    mutlaq pozitsiyalanadi, tashqi o'lcham o'zgarmaydi. */
 .price-input { position: relative; }
-.price-input input { width: 100%; padding-right: 64px !important; }
+.price-input input { width: 100%; padding-left: 64px !important; }
 .currency-toggle {
   position: absolute;
   top: 50%;
-  right: 4px;
+  left: 4px;
   transform: translateY(-50%);
   min-width: 44px;
   height: 30px;
