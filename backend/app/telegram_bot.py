@@ -188,7 +188,6 @@ async def post_to_channel(listing: Listing) -> list[int] | None:
     caption_lines = [
         f"🚗 <b>{_e(listing.brand)} {_e(listing.model)}</b>",
         "",
-        f"💰 <b>{format_price(listing.price, listing.currency)}</b>",
         f"📅 {listing.year}",
         f"🛣 {listing.mileage:,} km".replace(",", " "),
     ]
@@ -199,6 +198,7 @@ async def post_to_channel(listing: Listing) -> list[int] | None:
     location = format_location(listing.region, listing.district)
     if location:
         caption_lines.append(f"📍 {_e(location)}")
+    caption_lines.append(f"💰 <b>{format_price(listing.price, listing.currency)}</b>")
     if listing.description:
         desc = listing.description.strip()
         caption_lines.append("")
