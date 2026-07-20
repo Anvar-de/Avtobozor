@@ -11,3 +11,4 @@ Pillow==12.3.0
 pillow-heif==1.4.0
 boto3==1.35.36
 slowapi==0.1.9
+rapidfuzz==3.10.1

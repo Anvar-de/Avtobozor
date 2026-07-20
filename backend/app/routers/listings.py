@@ -14,6 +14,7 @@ from shared.database import SessionLocal, get_db
 from shared.models import ExchangeRate, Listing, Photo, ListingStatus
 from shared.storage import save_photo, delete_photo
 from ..rate_limit import limiter
+from ..search_utils import expand_search_word
 from ..telegram_auth import get_telegram_user
 from ..telegram_bot import delete_channel_post
 from ..telegram_notify import notify_admin_new_listing
@@ -171,13 +172,22 @@ def list_listings(
         ]
         numeric_columns = [Listing.year, Listing.price, Listing.mileage]
         for word in search.split():
-            like = f"%{word}%"
-            conditions = [col.ilike(like) for col in text_columns]
             # Raqamsiz so'z (masalan "Cobalt") hech qachon raqamli ustunga mos
             # kelmaydi — shunday so'zlar uchun cast(...)+ilike qo'shimcha
             # ishlashni (har bir qatorda CAST hisoblashni) tashlab yuboramiz.
             if any(ch.isdigit() for ch in word):
+                like = f"%{word}%"
+                conditions = [col.ilike(like) for col in text_columns]
                 conditions += [cast(col, String).ilike(like) for col in numeric_columns]
+            else:
+                # Imlo xatolari, kirill yozuvi va model taxalluslariga (masalan
+                # "kobilt" -> Cobalt, "jentra"/"жентра" -> Gentra) chidamli
+                # bo'lish uchun so'z bir nechta variantga kengaytiriladi.
+                conditions = [
+                    col.ilike(f"%{term}%")
+                    for term in expand_search_word(word)
+                    for col in text_columns
+                ]
             q = q.filter(or_(*conditions))
     if brand:
         q = q.filter(Listing.brand.ilike(f"%{brand}%"))
