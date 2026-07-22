@@ -185,8 +185,10 @@ async def post_to_channel(listing: Listing) -> list[int] | None:
     if bot is None or not CHANNEL_ID:
         return None
 
+    brand_tag = "".join(listing.brand.split())
+    model_tag = "".join(listing.model.split())
     caption_lines = [
-        f"🚗 <b>{_e(listing.brand)} {_e(listing.model)}</b>",
+        f"🚗 <b>#{_e(brand_tag)} #{_e(model_tag)}</b>",
         "",
         f"📅 {listing.year}",
         f"🛣 {listing.mileage:,} km".replace(",", " "),
