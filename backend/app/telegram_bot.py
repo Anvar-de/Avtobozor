@@ -373,15 +373,16 @@ async def reklama_handler(message: Message):
     if not is_admin_user(message.from_user.id):
         return
 
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
             text="🚗 Ilovani ochish",
             url=(
                 f"https://t.me/{BOT_USERNAME}/{MINI_APP_SHORT_NAME}?startapp=ad"
                 if BOT_USERNAME else MINI_APP_URL
             ),
-        )
-    ]])
+        )],
+        [InlineKeyboardButton(text="📢 Kanalimizga qo'shilish", url=CHANNEL_LINK)],
+    ])
     await message.answer(
         "🚗 Avtomobil sotib olish yoki sotish osonlashdi!\n\n"
         "Idealavtosavdo — minglab avtomobil e'lonlari bir joyda: qidiring, "
