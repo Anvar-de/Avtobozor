@@ -293,6 +293,11 @@ async def upload_photo(
         raise HTTPException(status_code=404, detail="E'lon topilmadi")
     if listing.user_id != user.id:
         raise HTTPException(status_code=403, detail="Bu sizning e'loningiz emas")
+    if listing.status != ListingStatus.pending:
+        # Aks holda egasi tasdiqlangan (allaqachon ochiq, ko'rib chiqilgan)
+        # e'longa keyinchalik hech kim ko'rmagan yangi rasm qo'shib, moderatsiyani
+        # chetlab o'tishi mumkin edi.
+        raise HTTPException(status_code=400, detail="Bu e'lon allaqachon ko'rib chiqilgan, endi rasm qo'shib bo'lmaydi")
     if len(listing.photos) >= MAX_PHOTOS_PER_LISTING:
         raise HTTPException(status_code=400, detail=f"Ko'pi bilan {MAX_PHOTOS_PER_LISTING} ta rasm yuklash mumkin")
 

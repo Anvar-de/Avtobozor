@@ -409,6 +409,15 @@ async def moderation_handler(callback: CallbackQuery):
             await callback.answer("E'lon topilmadi (o'chirilgan bo'lishi mumkin)", show_alert=True)
             return
 
+        if listing.status != ListingStatus.pending:
+            # Tugma xabardan pastda quyida olib tashlanadi, lekin shunga
+            # qaramay ikki marta tez-tez bosilsa (Telegram sekin ishlaganda
+            # bo'lishi mumkin), qayta ishlamaymiz — aks holda kanalga
+            # ikkinchi (dublikat) post joylanib, egasiga ham ikkinchi marta
+            # bildirishnoma ketardi.
+            await callback.answer("Bu e'lon allaqachon ko'rib chiqilgan", show_alert=True)
+            return
+
         listing.status = ListingStatus.approved if action == "approve" else ListingStatus.rejected
         db.commit()
 
@@ -418,11 +427,13 @@ async def moderation_handler(callback: CallbackQuery):
         # .caption Telegram tomonidan formatlashsiz (entity'lar olib tashlangan)
         # qaytariladi, shu sabab qayta yuborishda parse_mode berilmaydi — aks
         # holda ichidagi "<"/">" belgilari xato HTML sifatida talqin qilinib,
-        # Telegram API xatolik qaytarishi mumkin edi.
+        # Telegram API xatolik qaytarishi mumkin edi. `reply_markup=None`
+        # tugmalarni xabardan olib tashlaydi — aks holda ular bosilishda
+        # qolib, qayta bosilganda yuqoridagi tekshiruvgacha yetib borardi.
         if callback.message.photo:
-            await callback.message.edit_caption(caption=f"{callback.message.caption}\n\nHolat: {status_text}")
+            await callback.message.edit_caption(caption=f"{callback.message.caption}\n\nHolat: {status_text}", reply_markup=None)
         else:
-            await callback.message.edit_text(f"{callback.message.text}\n\nHolat: {status_text}")
+            await callback.message.edit_text(f"{callback.message.text}\n\nHolat: {status_text}", reply_markup=None)
         await callback.answer(f"E'lon {status_text}")
 
         owner = listing.owner
