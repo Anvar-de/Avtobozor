@@ -35,6 +35,8 @@ CHANNEL_ID = os.getenv("CHANNEL_ID", "").strip()
 # BotFather'da /newapp orqali yaratilgan Mini App short name (masalan "Autosavdo") —
 # kanal tugmasidan bitta bosishda to'g'ridan-to'g'ri Mini App ochilishi uchun kerak.
 MINI_APP_SHORT_NAME = os.getenv("MINI_APP_SHORT_NAME", "Autosavdo").strip()
+# /start xabarida foydalanuvchini taklif qilinadigan kanal linki.
+CHANNEL_LINK = "https://t.me/idealavtosavdo"
 
 # Kanal posti uchun bir nechta e'lon rasmidan yasaladigan kollaj sozlamalari.
 # Cheklovlar xotira/CPU'ni yeb ketadigan yoki osilib qoladigan holatlarning oldini olish uchun.
@@ -317,15 +319,17 @@ async def start_handler(message: Message):
     finally:
         db.close()
 
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
             text="🚗 E'lonlarni ko'rish / joylash",
             web_app=WebAppInfo(url=MINI_APP_URL),
-        )
-    ]])
+        )],
+        [InlineKeyboardButton(text="📢 Kanalimizga qo'shilish", url=CHANNEL_LINK)],
+    ])
     await message.answer(
         "Assalomu alaykum! Bu yerda avtomobil sotuvi e'lonlarini ko'rishingiz "
-        "va o'zingiz e'lon joylashingiz mumkin.",
+        "va o'zingiz e'lon joylashingiz mumkin.\n\n"
+        f"Yangiliklardan xabardor bo'lish uchun kanalimizga qo'shiling: {CHANNEL_LINK}",
         reply_markup=keyboard,
     )
 
