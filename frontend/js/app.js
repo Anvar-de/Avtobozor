@@ -136,32 +136,40 @@ function showView(name) {
   document.getElementById("btnCreate").hidden = hideBottomBtns;
   document.getElementById("btnRefreshFeed").hidden = hideBottomBtns;
   window.scrollTo(0, 0);
+  // Telegram'ning o'z orqaga tugmasi (va shu orqali Android'ning apparat
+  // orqaga tugmasi) faqat feed'dan boshqa sahifalarda ko'rinadi — feed'da
+  // apparat tugmasi mini appni odatdagidek yopib yuborishi kerak.
+  if (name === "feed") {
+    tg?.BackButton?.hide();
+  } else {
+    tg?.BackButton?.show();
+  }
 }
 
-document.querySelectorAll("[data-back]").forEach((btn) => {
-  btn.addEventListener("click", async () => {
-    // "Yangi e'lon" formasidan tahrirlashni yakunlamasdan chiqib ketilsa,
-    // forma keyingi safar "yaratish" rejimida ochilishi uchun tozalaymiz.
-    resetCreateFormState();
-    showView(btn.dataset.back);
-    // Ro'yxat sahifasiga qaytilganda uni qayta yuklaymiz — aks holda
-    // o'chirilgan/o'zgartirilgan e'lon eski (keshlangan) holatda ko'rinib qolardi.
-    if (btn.dataset.back === "feed") {
-      await loadFeed();
-      // showView yuqoriga scroll qilib qo'yadi — oxirgi ochilgan e'lon
-      // hali ham ro'yxatda bo'lsa, foydalanuvchini o'sha kartaga qaytaramiz.
-      // Feed endi sahifalab (10 tadan) yuklangani uchun kerak bo'lsa, karta
-      // topilguncha keyingi sahifalarni ham yuklaymiz.
-      if (lastOpenedListingId != null) {
-        const cardSelector = `.card[data-listing-id="${lastOpenedListingId}"]`;
-        while (!document.querySelector(cardSelector) && feedHasMore) {
-          await fetchFeedPage();
-        }
-        document.querySelector(cardSelector)?.scrollIntoView({ block: "center" });
-      }
+// Barcha ichki sahifalar ("detail", "my", "create") feed'ga qaytadi — chuqur
+// stek yo'q, shuning uchun orqaga qaytish har doim shu bitta funksiya.
+async function goBackToFeed() {
+  // "Yangi e'lon" formasidan tahrirlashni yakunlamasdan chiqib ketilsa,
+  // forma keyingi safar "yaratish" rejimida ochilishi uchun tozalaymiz.
+  resetCreateFormState();
+  showView("feed");
+  // Ro'yxat sahifasiga qaytilganda uni qayta yuklaymiz — aks holda
+  // o'chirilgan/o'zgartirilgan e'lon eski (keshlangan) holatda ko'rinib qolardi.
+  await loadFeed();
+  // showView yuqoriga scroll qilib qo'yadi — oxirgi ochilgan e'lon
+  // hali ham ro'yxatda bo'lsa, foydalanuvchini o'sha kartaga qaytaramiz.
+  // Feed endi sahifalab (10 tadan) yuklangani uchun kerak bo'lsa, karta
+  // topilguncha keyingi sahifalarni ham yuklaymiz.
+  if (lastOpenedListingId != null) {
+    const cardSelector = `.card[data-listing-id="${lastOpenedListingId}"]`;
+    while (!document.querySelector(cardSelector) && feedHasMore) {
+      await fetchFeedPage();
     }
-  });
-});
+    document.querySelector(cardSelector)?.scrollIntoView({ block: "center" });
+  }
+}
+
+tg?.BackButton?.onClick(goBackToFeed);
 
 // ============================================================
 // E'lon kartasi
