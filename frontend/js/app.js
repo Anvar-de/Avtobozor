@@ -869,10 +869,25 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
       // foydalanuvchiga xatolik ko'rsatmaymiz, e'lon baribir ko'rib chiqiladi.
     }
 
+    // Agar bot hali shu foydalanuvchiga yoza olmasa (masalan hech qachon
+    // /start bosmagan bo'lsa), e'lon tasdiqlanganda/rad etilganda kelishi
+    // kerak bo'lgan bildirishnoma jimgina yetib bormay qoladi. Shu sababli
+    // shu yerda (ruxsat hali yo'q bo'lsa) qisqa tushuntirish bilan Telegram'ning
+    // o'z native ruxsat so'rash oynasini chaqiramiz.
+    const needsWriteAccess = tg?.requestWriteAccess && !tg.initDataUnsafe?.user?.allows_write_to_pm;
+    const writeAccessHint = needsWriteAccess
+      ? "\n\nTasdiqlanganda/rad etilganda sizga botdan xabar boradi — buning uchun ruxsat bering 👇"
+      : "";
+
     if (failedNames.length) {
-      showToast(`E'lon yuborildi, lekin ${failedNames.length} ta rasm yuklanmadi: ${failedNames.join(", ")}`);
+      showToast(`E'lon yuborildi, lekin ${failedNames.length} ta rasm yuklanmadi: ${failedNames.join(", ")}${writeAccessHint}`);
     } else {
-      showToast("E'lon yuborildi! Admin tasdiqlagach ro'yxatda ko'rinadi.");
+      showToast(`E'lon yuborildi! Admin tasdiqlagach ro'yxatda ko'rinadi.${writeAccessHint}`);
+    }
+    if (needsWriteAccess) {
+      // Toast avval ko'rinib turishi uchun kichik kechikish bilan chaqiramiz —
+      // aks holda native popup uni darhol yopib qo'yardi.
+      setTimeout(() => tg.requestWriteAccess(), 1200);
     }
     form.reset();
     resetDistrictSelect();
