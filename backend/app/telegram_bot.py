@@ -364,6 +364,33 @@ async def stats_handler(message: Message):
         db.close()
 
 
+@dp.message(Command("reklama"))
+async def reklama_handler(message: Message):
+    """Faqat admin ishlata oladi: boshqa kanal/gruppalarda tarqatish uchun tayyor
+    reklama xabari (matn + mini appni ochuvchi tugma) yuboradi — buni keyin kerakli
+    joyga qo'lda forward qilish mumkin."""
+    from .routers.auth import is_admin_user
+    if not is_admin_user(message.from_user.id):
+        return
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="🚗 Ilovani ochish",
+            url=(
+                f"https://t.me/{BOT_USERNAME}/{MINI_APP_SHORT_NAME}?startapp=ad"
+                if BOT_USERNAME else MINI_APP_URL
+            ),
+        )
+    ]])
+    await message.answer(
+        "🚗 Avtomobil sotib olish yoki sotish osonlashdi!\n\n"
+        "Idealavtosavdo — minglab avtomobil e'lonlari bir joyda: qidiring, "
+        "solishtiring, narxini taqqoslang yoki o'zingiznikini bepul joylang.\n\n"
+        "👇 Pastdagi tugmani bosing",
+        reply_markup=keyboard,
+    )
+
+
 @dp.callback_query(F.data.startswith("approve:") | F.data.startswith("reject:"))
 async def moderation_handler(callback: CallbackQuery):
     from .routers.auth import is_admin_user
