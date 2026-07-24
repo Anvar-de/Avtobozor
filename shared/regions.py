@@ -6,7 +6,7 @@ shu ro'yxatdan to'ldiriladi (frontend GET /api/regions orqali oladi).
 
 from typing import Optional
 
-REGIONS: dict[str, list[str]] = {
+_RAW_REGIONS: dict[str, list[str]] = {
     "Toshkent shahri": [
         "Olmazor", "Bektemir", "Mirobod", "Mirzo Ulug'bek", "Sirg'ali",
         "Uchtepa", "Chilonzor", "Shayxontohur", "Yunusobod", "Yakkasaroy",
@@ -87,6 +87,10 @@ REGIONS: dict[str, list[str]] = {
         "Xazorasp", "Xonqa", "Xiva", "Cholish", "Shovot", "Yangiariq",
         "Tuproqqal'a", "Yangibozor",
     ],
+}
+
+REGIONS: dict[str, list[str]] = {
+    region: sorted(districts) for region, districts in _RAW_REGIONS.items()
 }
 
 
