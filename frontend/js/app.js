@@ -108,7 +108,7 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add("toast--visible");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("toast--visible"), 2500);
+  toastTimer = setTimeout(() => el.classList.remove("toast--visible"), 4000);
 }
 
 const STATUS_LABELS = {
